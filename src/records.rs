@@ -18,21 +18,55 @@ pub enum RecordParseError {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Record {
     /// chromosome
-    pub chr: String,
+    chr: String,
     /// 0-based start position
-    pub start: u64,
+    start: u64,
     /// 1-based, non-inclusive end position
-    pub end: u64,
+    end: u64,
     /// read name
-    pub name: String,
+    name: String,
     /// read number in paired-end sequencing (0 = fragment, 1 = read 1, 2 = read 2)
-    pub read_number: u8,
+    read_number: u8,
     /// BS strand (+ for OT/CTOT, - for OB/CTOB)
-    pub bs_strand: char,
+    bs_strand: char,
     /// string for CpG methylation/SNPs
-    pub cpg: String,
+    cpg: String,
     /// string for GpC methylation/SNPs (None if not included)
-    pub gpc: Option<String>,
+    gpc: Option<String>,
+}
+
+impl Record {
+    pub fn get_chr(&self) -> &String {
+        &self.chr
+    }
+
+    pub fn get_start(&self) -> u64 {
+        self.start
+    }
+
+    pub fn get_end(&self) -> u64 {
+        self.end
+    }
+
+    pub fn get_name(&self) -> &String {
+        &self.name
+    }
+
+    pub fn get_read_number(&self) -> u8 {
+        self.read_number
+    }
+
+    pub fn get_bs_strand(&self) -> &char {
+        &self.bs_strand
+    }
+
+    pub fn get_cpg(&self) -> &String {
+        &self.cpg
+    }
+
+    pub fn get_gpc(&self) -> &Option<String> {
+        &self.gpc
+    }
 }
 
 impl fmt::Display for Record {
@@ -79,7 +113,7 @@ impl FromStr for Record {
         let name: String    = String::from(vec[3]);
         let read_number: u8 = vec[4].parse().unwrap();
         let bs_strand: char = tmp[0];
-        let cpg: String = utils::decode_rle(&String::from(vec[6]));
+        let cpg: String     = utils::decode_rle(&String::from(vec[6]));
 
         let gpc = if vec.len() == 8 {
             Some(utils::decode_rle(&String::from(vec[7])))
