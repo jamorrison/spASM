@@ -36,24 +36,41 @@ pub struct Record {
 }
 
 impl Record {
+    pub fn new(chr: String, start: u64, end: u64, name: String, rn: u8, bss: char, cpg: String, gpc: Option<String>) -> Record {
+        Record {
+            chr: chr,
+            start: start,
+            end: end,
+            name: name,
+            read_number: rn,
+            bs_strand: bss,
+            cpg: cpg,
+            gpc: gpc
+        }
+    }
+
     pub fn get_chr(&self) -> &String {
         &self.chr
     }
 
-    pub fn get_start(&self) -> u64 {
-        self.start
+    pub fn get_start(&self) -> &u64 {
+        &self.start
     }
 
-    pub fn get_end(&self) -> u64 {
-        self.end
+    pub fn get_end(&self) -> &u64 {
+        &self.end
     }
 
     pub fn get_name(&self) -> &String {
         &self.name
     }
 
-    pub fn get_read_number(&self) -> u8 {
-        self.read_number
+    pub fn get_read_number(&self) -> &u8 {
+        &self.read_number
+    }
+
+    pub fn set_read_number(&mut self, n: u8) {
+        self.read_number = n;
     }
 
     pub fn get_bs_strand(&self) -> &char {

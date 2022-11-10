@@ -41,51 +41,75 @@ mod tests {
     use super::*;
     use crate::pairs::{
         SnpType,
-        Snp,
         CpgType,
-        Cpg,
-        Pair,
-        PairP,
+    };
+    use crate::stats::{
+        SnpCpgData,
+        PValMetadata,
     };
 
     #[test]
     fn test_sorted_indexes_forward() {
-        let mut test: Vec<PairP> = Vec::new();
+        let mut test: Vec<SnpCpgData> = Vec::new();
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
 
         let sort: Vec<usize> = sorted_indexes(&test, false);
@@ -95,42 +119,66 @@ mod tests {
 
     #[test]
     fn test_sorted_indexes_reverse() {
-        let mut test: Vec<PairP> = Vec::new();
+        let mut test: Vec<SnpCpgData> = Vec::new();
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
 
         let sort: Vec<usize> = sorted_indexes(&test, true);
@@ -140,42 +188,66 @@ mod tests {
 
     #[test]
     fn test_sorted_ranks_forward() {
-        let mut test: Vec<PairP> = Vec::new();
+        let mut test: Vec<SnpCpgData> = Vec::new();
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
 
         let sort: Vec<usize> = unsort_sorted_indexes(&test, false);
@@ -185,42 +257,66 @@ mod tests {
 
     #[test]
     fn test_sorted_ranks_reverse() {
-        let mut test: Vec<PairP> = Vec::new();
+        let mut test: Vec<SnpCpgData> = Vec::new();
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
 
         let sort: Vec<usize> = unsort_sorted_indexes(&test, true);
@@ -230,225 +326,369 @@ mod tests {
 
     #[test]
     fn test_sort_with_floats_forward() {
-        let mut test: Vec<PairP> = Vec::new();
+        let mut test: Vec<SnpCpgData> = Vec::new();
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
 
-        let compare: Vec<PairP> = vec![
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            },
+        let compare: Vec<SnpCpgData> = vec![
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
         ];
 
-        let sort: Vec<PairP> = sort_with_floats(&test, false);
+        let sort: Vec<SnpCpgData> = sort_with_floats(&test, false);
 
         assert_eq!(sort, compare);
     }
 
     #[test]
     fn test_sort_with_floats_reverse() {
-        let mut test: Vec<PairP> = Vec::new();
+        let mut test: Vec<SnpCpgData> = Vec::new();
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
 
-        let compare: Vec<PairP> = vec![
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            },
+        let compare: Vec<SnpCpgData> = vec![
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
         ];
 
-        let sort: Vec<PairP> = sort_with_floats(&test, true);
+        let sort: Vec<SnpCpgData> = sort_with_floats(&test, true);
 
         assert_eq!(sort, compare);
     }
 
     #[test]
     fn test_resort() {
-        let mut test: Vec<PairP> = Vec::new();
+        let mut test: Vec<SnpCpgData> = Vec::new();
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            }
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
         test.push(
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            }
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            )
         );
 
-        let compare: Vec<PairP> = vec![
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 1.0
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.5
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr2".to_string(), pos: 1000, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1010, typ: CpgType::Meth }
-                },
-                p: 0.4
-            },
-            PairP {
-                pair: Pair {
-                    snp: Snp { chr: "chr1".to_string(), pos: 1100, typ: SnpType::SnpA },
-                    cpg: Cpg { chr: "chr1".to_string(), pos: 1110, typ: CpgType::Meth }
-                },
-                p: 0.4
-            },
+        let compare: Vec<SnpCpgData> = vec![
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1010,
+                1.0,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1000,
+                1010,
+                0.5,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr2".to_string(),
+                1000,
+                1010,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
+            SnpCpgData::new(
+                "chr1".to_string(),
+                1100,
+                1110,
+                0.4,
+                PValMetadata::new(
+                    SnpType::SnpA,
+                    SnpType::SnpT,
+                    CpgType::Meth,
+                    CpgType::NotMeth,
+                    (1, 0, 0, 1)
+                )
+            ),
         ];
 
         let rank: Vec<usize> = vec![1, 2, 3, 0];

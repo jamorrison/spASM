@@ -1,6 +1,7 @@
 use std::{
     str::FromStr,
     fmt,
+    cmp::Ordering,
 };
 
 use crate::utils::{
@@ -9,11 +10,14 @@ use crate::utils::{
     top_two,
 };
 
-use crate::pairs::{
+use crate::constants::{
+    CLOSE_TO_ZERO,
     N_METH_STATES,
+};
+
+use crate::pairs::{
     SnpType,
     CpgType,
-    PairP,
 };
 
 use crate::sorting::{
@@ -196,15 +200,153 @@ pub fn fisher_exact(m11: i64, m12: i64, m21: i64, m22: i64) -> (f64, f64, f64) {
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 pub struct PValMetadata {
     /// SNP1
-    pub snp1: SnpType,
+    snp1: SnpType,
     /// SNP2
-    pub snp2: SnpType,
+    snp2: SnpType,
     /// CpG1
-    pub cpg1: CpgType,
+    cpg1: CpgType,
     /// CpG2
-    pub cpg2: CpgType,
+    cpg2: CpgType,
     /// Contingency table
-    pub mat: (i64, i64, i64, i64),
+    mat: (i64, i64, i64, i64),
+}
+
+impl PValMetadata {
+    pub fn new(s1: SnpType, s2: SnpType, c1: CpgType, c2: CpgType, m: (i64, i64, i64, i64)) -> PValMetadata {
+        PValMetadata { snp1: s1, snp2: s2, cpg1: c1, cpg2: c2, mat: m }
+    }
+}
+
+/// SNP-CpG pair with P-value
+#[derive(Debug, PartialEq, Clone)]
+pub struct SnpCpgData {
+    /// Chromosome
+    chr: String,
+    /// SNP location (0-based)
+    snp_pos: u64,
+    /// CpG location (0-based)
+    cpg_pos: u64,
+    /// p-value
+    p: f64,
+    /// Metadata on the p-value
+    pdata: PValMetadata,
+}
+
+impl SnpCpgData {
+    pub fn new(chr: String, s_pos: u64, c_pos: u64, p: f64, pdata: PValMetadata) -> SnpCpgData {
+        SnpCpgData { chr: chr, snp_pos: s_pos, cpg_pos: c_pos, p: p, pdata: pdata }
+    }
+
+    //pub fn get_chr(&self) -> &String {
+    //    &self.chr
+    //}
+
+    //pub fn get_snp_pos(&self) -> &u64 {
+    //    &self.snp_pos
+    //}
+
+    //pub fn get_cpg_pos(&self) -> &u64 {
+    //    &self.cpg_pos
+    //}
+
+    //pub fn get_p(&self) -> &f64 {
+    //    &self.p
+    //}
+
+    //pub fn get_pdata(&self) -> &PValMetadata {
+    //    &self.pdata
+    //}
+
+    /// Write in BEDPE format
+    /// SNP chr, SNP start, SNP end, CpG chrom, CpG start, CpG end, name, p-value, SNP strand, CpG
+    /// strand, SNP1, SNP2, CpG1, CpG2, m11, m12, m21, m22
+    pub fn to_bedpe(&self, cutoff: f64) -> String {
+        let name: &str = if self.p < cutoff {
+            "candidate"
+        } else {
+            "non_candidate"
+        };
+
+        format!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            self.chr,
+            self.snp_pos,
+            self.snp_pos+1,
+            self.chr,
+            self.cpg_pos,
+            self.cpg_pos+2,
+            name,
+            self.p,
+            self.pdata.snp1,
+            self.pdata.snp2,
+            self.pdata.cpg1,
+            self.pdata.cpg2,
+            self.pdata.mat.0,
+            self.pdata.mat.1,
+            self.pdata.mat.2,
+            self.pdata.mat.3,
+        )
+    }
+
+    /// Write in BISCUIT ASM format
+    /// chr, snp position, cpg position, SNP1, SNP2, CPG1, CPG2, m11, m12, m21, m22, p-value
+    pub fn to_biscuit_asm(&self) -> String {
+        format!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            self.chr,
+            self.snp_pos,
+            self.cpg_pos,
+            self.pdata.snp1,
+            self.pdata.snp2,
+            self.pdata.cpg1,
+            self.pdata.cpg2,
+            self.pdata.mat.0,
+            self.pdata.mat.1,
+            self.pdata.mat.2,
+            self.pdata.mat.3,
+            self.p,
+        )
+    }
+}
+
+impl fmt::Display for SnpCpgData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s: String = format!(
+            "chr: {}, SNP pos: {}, CpG pos: {}, SNP1: {} SNP2: {}, CpG1: {}, CpG2: {}, contingency table: (m11: {}, m12: {}, m21: {}, m22: {}) p-value: {}",
+            self.chr,
+            self.snp_pos,
+            self.cpg_pos,
+            self.pdata.snp1,
+            self.pdata.snp2,
+            self.pdata.cpg1,
+            self.pdata.cpg2,
+            self.pdata.mat.0,
+            self.pdata.mat.1,
+            self.pdata.mat.2,
+            self.pdata.mat.3,
+            self.p
+        );
+
+        write!(f, "{}", s)
+    }
+}
+
+impl PartialOrd for SnpCpgData {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if (self.p - &other.p).abs() < CLOSE_TO_ZERO {
+            if self.chr == other.chr {
+                if self.snp_pos == other.snp_pos {
+                    self.cpg_pos.partial_cmp(&other.cpg_pos)
+                } else {
+                    self.snp_pos.partial_cmp(&other.snp_pos)
+                }
+            } else {
+                self.chr.partial_cmp(&other.chr)
+            }
+        } else {
+            self.p.partial_cmp(&other.p)
+        }
+    }
 }
 
 pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Option<(f64, f64, f64, PValMetadata)> {
@@ -231,14 +373,14 @@ pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Option<(f6
 
         return Some(
             (left, right, two,
-             PValMetadata{
-                 snp1: SnpType::from_usize(row_one).unwrap(), snp2: SnpType::from_usize(row_two).unwrap(),
-                 cpg1: CpgType::from_usize(col_one).unwrap(), cpg2: CpgType::from_usize(col_two).unwrap(),
-                 mat: (fm[N_METH_STATES*row_one+col_one],
-                       fm[N_METH_STATES*row_one+col_two],
-                       fm[N_METH_STATES*row_two+col_one],
-                       fm[N_METH_STATES*row_two+col_two]),
-             }
+             PValMetadata::new(
+                 SnpType::from_usize(row_one).unwrap(),
+                 SnpType::from_usize(row_two).unwrap(),
+                 CpgType::from_usize(col_one).unwrap(),
+                 CpgType::from_usize(col_two).unwrap(),
+                 (fm[N_METH_STATES*row_one+col_one], fm[N_METH_STATES*row_one+col_two],
+                  fm[N_METH_STATES*row_two+col_one], fm[N_METH_STATES*row_two+col_two]),
+             )
             )
         );
     }
@@ -248,7 +390,7 @@ pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Option<(f6
 
 /// Available types of FDR corrections
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
-pub enum FdrType {
+enum FdrType {
     Bh,
     Holm,
     Hochberg,
@@ -298,8 +440,8 @@ impl FromStr for FdrType {
 }
 
 /// Perform Bonferonni p-value adjustment
-fn bonferroni(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
-    let mut out: Vec<PairP> = Vec::new();
+fn bonferroni(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
+    let mut out: Vec<SnpCpgData> = Vec::new();
     for v in p {
         let tmp: f64 = if v.p*n as f64 > 1.0 {
             1.0 
@@ -307,15 +449,15 @@ fn bonferroni(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
             v.p * n as f64
         };
 
-        out.push( PairP { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: tmp, pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: tmp, pdata: v.pdata } );
     }
 
     out
 }
 
 /// Perform BH p-value adjustment, sorting done in-function
-fn benjamini_hochberg(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
-    let mut out: Vec<PairP> = Vec::new();
+fn benjamini_hochberg(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
+    let mut out: Vec<SnpCpgData> = Vec::new();
 
     // Rank of p-values
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
@@ -334,18 +476,18 @@ fn benjamini_hochberg(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
             curr_min = tmp;
         }
 
-        out.push( PairP { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
     }
 
     resort(&out, &original_order)
 }
 
 /// Performs BY p-value adjustment, sorting done in-function
-fn benjamini_yekutieli(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
+fn benjamini_yekutieli(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
     // Euler-Mascheroni constant
     const GAMMA: f64 = 0.577215664901532;
 
-    let mut out: Vec<PairP> = Vec::new();
+    let mut out: Vec<SnpCpgData> = Vec::new();
 
     // Rank of p-values
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
@@ -374,15 +516,15 @@ fn benjamini_yekutieli(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
             curr_min = tmp;
         }
 
-        out.push( PairP { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
     }
 
     resort(&out, &original_order)
 }
 
 /// Perform Hochberg p-value adjustment, sorting done in-function
-fn hochberg(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
-    let mut out: Vec<PairP> = Vec::new();
+fn hochberg(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
+    let mut out: Vec<SnpCpgData> = Vec::new();
 
     // Rank of p-values
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
@@ -401,15 +543,15 @@ fn hochberg(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
             curr_min = tmp;
         }
 
-        out.push( PairP { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
     }
 
     resort(&out, &original_order)
 }
 
 /// Perform Holm p-value adjustment, sorting done in-function
-fn holm(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
-    let mut out: Vec<PairP> = Vec::new();
+fn holm(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
+    let mut out: Vec<SnpCpgData> = Vec::new();
 
     // Rank of p-values
     let rank: Vec<usize> = (1..p.len()+1).collect();
@@ -428,20 +570,23 @@ fn holm(p: &Vec<PairP>, n: usize) -> Vec<PairP> {
             curr_max = tmp;
         }
 
-        out.push( PairP { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_max.min(1.0), pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_max.min(1.0), pdata: v.pdata } );
     }
 
     resort(&out, &original_order)
 }
 
-pub fn false_discovery_correction(p: &Vec<PairP>, typ: &mut FdrType, n: usize) -> Vec<PairP> {
+pub fn false_discovery_correction(p: &Vec<SnpCpgData>, typ: &str, n: usize) -> Vec<SnpCpgData> {
     // No need to correct things if nothing there or only one entry
     if p.len() <= 1 {
         return p.to_vec();
     }
 
-    let out: Vec<PairP>;
-    match *typ {
+    // Get FDR type
+    let t = FdrType::from_str(typ).unwrap();
+
+    let out: Vec<SnpCpgData>;
+    match t {
         FdrType::Bh => {
             out = benjamini_hochberg(p, n);
         },
@@ -468,10 +613,10 @@ pub fn false_discovery_correction(p: &Vec<PairP>, typ: &mut FdrType, n: usize) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils;
+    use crate::constants;
 
     fn float_equality(x: f64, y: f64) -> bool {
-        (x - y).abs() < utils::CLOSE_TO_ZERO
+        (x - y).abs() < constants::CLOSE_TO_ZERO
     }
 
     #[test]
