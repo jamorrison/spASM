@@ -29,16 +29,18 @@ use crate::stats::{
 };
 
 #[derive(Parser, Debug)]
-#[clap(name = "cis_611_project")]
-#[clap(author = "J. Morrison")]
-#[clap(version = "version 1.1")]
-struct Cli {
+#[clap(name = "spasm")]
+#[clap(author = "Jacob Morrison <jacob.morrison@vai.org>")]
+#[clap(version = "version 1.0.0")]
+struct Args {
+    /// path to indexed reference FASTA
+    genome: std::path::PathBuf,
+
     /// path to epiBED file
-    #[clap(parse(from_os_str))]
     path: std::path::PathBuf,
 
     /// region to extract (chr:start-end or chr)
-    #[clap(short, long, default_value_t = String::from("all"))]
+    #[clap(short = 'g', long, default_value_t = String::from("all"))]
     region: String,
 
     /// collapse reads to fragment-level
@@ -57,7 +59,7 @@ struct Cli {
     ///     Hochberg,
     ///     Holm,
     ///     No (do not apply false discovery correction)
-    #[clap(long, default_value_t = String::from("BH"))]
+    #[clap(short = 'c', long, default_value_t = String::from("BH"))]
     fdr: String,
 
     /// p-value significance cutoff
@@ -74,7 +76,7 @@ struct Cli {
 }
 
 /// Read file and put results in a HashMap keyed on the read name
-fn process_file(fh: &mut BufReader<bgzf::Reader>, args: &Cli, chr: &String, start: &u64, end: &u64) -> Result<HashMap::<String, Vec<Record>>> {
+fn process_file(fh: &mut BufReader<bgzf::Reader>, args: &Args, chr: &String, start: &u64, end: &u64) -> Result<HashMap::<String, Vec<Record>>> {
     let mut line    = String::new();
     let mut records = HashMap::<String, Vec<Record>>::new();
 
@@ -139,7 +141,7 @@ fn process_file(fh: &mut BufReader<bgzf::Reader>, args: &Cli, chr: &String, star
 
 /// Loop over records, collapose to fragment if requested, then loop over each vector entry to pull
 /// out CpGs and SNPs to form input to ASM calculation
-fn create_snp_cpg_pairs(fr: &HashMap::<String, Vec<Record>>, args: &Cli, chr: &String, start: &u64, end: &u64) -> Vec<Pair> {
+fn create_snp_cpg_pairs(fr: &HashMap::<String, Vec<Record>>, args: &Args, chr: &String, start: &u64, end: &u64) -> Vec<Pair> {
     let mut out: Vec<Pair> = Vec::new();
 
     for val in fr.values() {
@@ -310,7 +312,7 @@ fn write_data(fh: &mut bgzf::Writer, data: &Vec<SnpCpgData>, is_biscuit: bool, c
 
 fn main() {
     // Command line arguments
-    let args = Cli::parse();
+    let args = Args::parse();
 
     // Chromosome, start, and end of region of interest
     let (r_chr, r_start, r_end) = utils::parse_region(&args.region);
