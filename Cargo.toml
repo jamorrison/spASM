@@ -12,4 +12,3 @@ rust-htslib = { version = "0.40.2" }
 clap = { version = "4.1.4", features = ["derive"] }
 anyhow = { version = "1.0.68" }
 quit = { version = "1.2.0" }
-snafu = { version = "0.7.4" }

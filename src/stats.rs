@@ -4,8 +4,6 @@ use std::{
     cmp::Ordering,
 };
 
-use snafu::prelude::*;
-
 use crate::utils::{
     row_sums,
     col_sums,
@@ -28,292 +26,55 @@ use crate::sorting::{
     resort,
 };
 
-/// calculate fisher's exact test p-value
-/// m11 m12 | r1
-/// m21 m22 | r2
-/// --------+----
-/// c1  c2  | n
-pub struct HyperGeoAcc {
-    m11: i64,
-    r1 : i64,
-    c1 : i64,
-    n  : i64,
-    p  : f64,
+/// calculate Fisher's exact test
+/// Method from (fastFishersExactTest):
+///     https://genome.sph.umich.edu/w/images/b/b3/Bios615-fa12-lec03-presentation.pdf
+pub fn log_hypergeometric_dist(lf: &Vec<f64>, m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
+    lf[(m11+m12) as usize] +
+    lf[(m21+m22) as usize] +
+    lf[(m11+m21) as usize] +
+    lf[(m12+m22) as usize] -
+    lf[(m11) as usize] -
+    lf[(m12) as usize] -
+    lf[(m21) as usize] -
+    lf[(m22) as usize] -
+    lf[(m11+m12+m21+m22) as usize]
 }
 
-impl HyperGeoAcc {
-    fn new() -> HyperGeoAcc {
-        HyperGeoAcc {
-            m11: 0,
-            r1:  0,
-            c1:  0,
-            n:   0,
-            p:   0.0
-        }
-    }
-}
-
-#[derive(Debug, Snafu)]
-#[snafu(display("Invalid value given to ln_gamma. Z must be >= 0 (z = {z})"))]
-pub struct GammaError{ z: i64 }
-
-/// Reference: "Lanczos, C. 'A precision approximation of the gamma function', J. SIAM Numer. Anal., B, 1, 86-96, 1964."
-/// Transposition of  Alan Miller's FORTRAN-implementation. See:  http://lib.stat.cmu.edu/apstat/245
-pub fn ln_gamma(z: i64) -> Result<f64, GammaError> {
-    const COEFS: &[f64] = &[
-        0.9999999999995183,
-        676.5203681218835,
-        -1259.139216722289,
-        771.3234287757674,
-        -176.6150291498386,
-        12.50734324009056,
-        -0.1385710331296526,
-        0.9934937113930748e-05,
-        0.1659470187408462e-06
-    ];
-    const LN_SQRT_2PI: f64 = 0.9189385332046727;
-
-    if z < 0 {
-        return Err(GammaError{ z });
-    }
-
-    let     z        = z as f64;
-    let mut out: f64 = 0.0;
-    let mut tmp: f64 = 7.0 + z;
-
-    for i in (1..9).rev() {
-        out += COEFS[i] / tmp;
-        tmp -= 1.0;
-    }
-    out += COEFS[0];
-
-    Ok(out.ln() + LN_SQRT_2PI - (6.5 + z) + (z - 0.5)*(z + 6.5).ln())
-}
-
-pub fn ln_binomial(n: i64, k: i64) -> Result<f64, GammaError> {
-    if k == 0 || n == 0 || n-k <= 0 {
-        return Ok(0.0);
-    }
-
-    let n1  = match ln_gamma(n+1) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-    let k1  = match ln_gamma(k+1) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-    let nk1 = match ln_gamma(n-k+1) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-
-    Ok(n1 - k1 - nk1)
-}
-
-pub fn hypergeometric(m11: i64, r1: i64, c1: i64, n: i64) -> Result<f64, GammaError> {
-    let a = match ln_binomial(r1, m11) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-    let b = match ln_binomial(n-r1, c1-m11) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-    let c = match ln_binomial(n, c1) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-
-    Ok((a + b - c).exp())
-}
-
-pub fn hypergeometric_accumulator(m11: i64, r1: i64, c1: i64, n: i64, acc: &mut HyperGeoAcc) -> Result<f64, GammaError> {
-    if r1 > 0 || c1 > 0 || n > 0 {
-        acc.m11 = m11;
-        acc.r1  = r1;
-        acc.c1  = c1;
-        acc.n   = n;
-    } else {
-        // only m11 changed, the others are fixed
-        if m11 % 11 > 0 && m11+acc.n-acc.r1-acc.c1 > 0 {
-            if m11 == acc.m11+1 { // incremental
-                acc.p *= ((acc.r1 - acc.m11) / m11) as f64 * ((acc.c1 - acc.m11) / (m11 + acc.n - acc.r1 - acc.c1)) as f64;
-                acc.m11 = m11;
-
-                return Ok(acc.p);
-            }
-            if m11 == acc.m11-1 { // incremental
-                acc.p *= (acc.m11 / (acc.r1 - m11)) as f64 * ((acc.m11 + acc.n - acc.r1 - acc.c1) / (acc.c1 - m11)) as f64;
-                acc.m11 = m11;
-
-                return Ok(acc.p);
-            }
-        }
-
-        acc.m11 = m11;
-    }
-
-    acc.p = match hypergeometric(acc.m11, acc.r1, acc.c1, acc.n) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-
-    return Ok(acc.p);
-}
-
-pub fn logHypergeometricProb(logFacs: &Vec<f64>, m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
-    logFacs[(m11+m12) as usize] +
-    logFacs[(m21+m22) as usize] +
-    logFacs[(m11+m21) as usize] +
-    logFacs[(m12+m22) as usize] -
-    logFacs[(m11) as usize] -
-    logFacs[(m12) as usize] -
-    logFacs[(m21) as usize] -
-    logFacs[(m22) as usize] -
-    logFacs[(m11+m12+m21+m22) as usize]
-}
-
-pub fn other_implementation(m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
+pub fn fishers_exact(m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
     let n: i64 = m11 + m12 + m21 + m22;
-    let mut logFacs: Vec<f64> = vec![0.0; (n+1) as usize];
+
+    // Pre-store factorial values as ln(N!) to handle potentially large values
+    let mut log_factorials: Vec<f64> = vec![0.0; (n+1) as usize];
     for i in 1..n+1 {
-        logFacs[i as usize] = logFacs[(i-1) as usize] + (i as f64).ln();
+        log_factorials[i as usize] = log_factorials[(i-1) as usize] + (i as f64).ln();
     }
 
-    let logpCutoff = logHypergeometricProb(&logFacs, m11, m12, m21, m22);
+    let p_cutoff = log_hypergeometric_dist(&log_factorials, m11, m12, m21, m22);
 
-    let mut pFraction: f64 = 0.0;
+    let mut p: f64 = 0.0;
     for i in 0..n+1 {
         if m11+m12-i >= 0 && m11+m21-i >= 0 && m22-m11+i >= 0 {
-            let l = logHypergeometricProb(&logFacs, i, m11+m12-i, m11+m21-i, m22-m11+i);
-            if l <= logpCutoff {
-                pFraction += (l as f64 - logpCutoff).exp();
+            let l = log_hypergeometric_dist(&log_factorials, i, m11+m12-i, m11+m21-i, m22-m11+i);
+            if l <= p_cutoff {
+                p += (l as f64 - p_cutoff).exp();
             }
         }
     }
 
-    let logpValues = logpCutoff + pFraction.ln();
+    let log_p = p_cutoff + p.ln();
 
-    logpValues.exp()
+    let mut p = log_p.exp();
+    if p > 1.0 {
+        p = 1.0;
+    }
+
+    p
 }
 
 fn kinda_round(f: f64, n: u32) -> f64 {
     let exp = 10_i32.pow(n) as f64;
     (f * exp).round() / exp
-}
-
-pub fn fisher_exact(m11: i64, m12: i64, m21: i64, m22: i64) -> Result<(f64, f64, f64), GammaError> {
-    let r1: i64 = m11 + m12; // sum of first row
-    let c1: i64 = m11 + m21; // sum of first column
-    let n : i64 = m11 + m12 + m21 + m22; // sum of all values
-
-    let max: i64 = if c1 < r1 { c1 } else { r1 }; // for right tail
-    let min: i64 = if r1 + c1 - n < 0 { 0 } else { r1 + c1 - n }; // for left tail
-
-    if m11 == 15 && m12 == 13 && m21 == 0 && m22 == 1 {
-        println!("r1: {} c1: {} n: {} min: {} max: {}", &r1, &c1, &n, &min, &max);
-    }
-
-    // No need to do test
-    if min == max {
-        return Ok((1.0, 1.0, 1.0));
-    }
-
-    // Accumulator of hypergeometric test values
-    let mut acc = HyperGeoAcc::new();
-
-    // Probability of current table
-    let q = match hypergeometric_accumulator(m11, r1, c1, n, &mut acc) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-
-    // Left tail
-    let mut left: f64 = 0.0;
-    let mut p: f64 = match hypergeometric_accumulator(min, 0, 0, 0, &mut acc) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-    let mut i: i64 = min + 1;
-
-    if m11 == 15 && m12 == 13 && m21 == 0 && m22 == 1 {
-        println!("i-while before - i: {} p: {} q: {} <q: {} >q: {}", &i, &p, &q, 0.99999999*q, 1.00000001*q);
-    }
-    while i <= max && p < 0.99999999*q {
-        left += p;
-        p = match hypergeometric_accumulator(i, 0, 0, 0, &mut acc) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
-        i += 1;
-
-        if m11 == 15 && m12 == 13 && m21 == 0 && m22 == 1 {
-            println!("i-while - p: {} q: {} left: {}", &p, &q, &left);
-        }
-    }
-
-    i -= 1;
-    if p < 1.00000001*q {
-        left += p;
-    } else {
-        i -= 1;
-    }
-
-    if m11 == 15 && m12 == 13 && m21 == 0 && m22 == 1 {
-        println!("left - p: {} q: {} left: {}", &p, &q, &left);
-    }
-
-    // Right tail
-    p = match hypergeometric_accumulator(max, 0, 0, 0, &mut acc) {
-        Ok(v) => v,
-        Err(e) => return Err(e),
-    };
-    let mut right: f64 = 0.0;
-    let mut j: i64 = max - 1;
-    while j >= 0 && p < 0.99999999*q {
-        right += p;
-        p = match hypergeometric_accumulator(j, 0, 0, 0, &mut acc) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
-        j -= 1;
-    }
-
-    j += 1;
-    if p < 1.00000001*q {
-        right += p;
-    } else {
-        j += 1;
-    }
-
-    // Two tail
-    let mut two = left + right;
-    if two > 1.0 {
-        two = 1.0;
-    }
-
-    if m11 == 15 && m12 == 13 && m21 == 0 && m22 == 1 {
-        println!("{} {} {}", &left, &right, &two);
-    }
-
-    // Adjust left and right tails
-    if (i-m11).abs() < (j-m11).abs() {
-        right = 1.0 - left + q;
-    } else {
-        left = 1.0 - right + q;
-    }
-
-    let p_other = other_implementation(m11, m12, m21, m22);
-    if kinda_round(p_other, 8) - kinda_round(two, 8) > CLOSE_TO_ZERO {
-        println!("{} {} {} {} {} {}", m11, m12, m21, m22, two, p_other);
-    }
-    if m11 == 15 && m12 == 13 && m21 == 0 && m22 == 1 {
-        println!("max val: {}", f64::MAX / 100000000.0);
-        println!("other implementation: {}", p_other);
-    }
-
-    Ok((left, right, two))
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
@@ -379,8 +140,8 @@ impl SnpCpgData {
         };
 
         format!(
-            //"{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:10.16e}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            //"{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:10.16e}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             self.chr,
             self.snp_pos,
             self.snp_pos+1,
@@ -404,8 +165,8 @@ impl SnpCpgData {
     /// chr, snp position, cpg position, SNP1, SNP2, CPG1, CPG2, m11, m12, m21, m22, p-value
     pub fn to_biscuit_asm(&self) -> String {
         format!(
-            //"{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:10.6e}\n",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            //"{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:10.6e}\n",
             self.chr,
             self.snp_pos,
             self.cpg_pos,
@@ -462,7 +223,7 @@ impl PartialOrd for SnpCpgData {
     }
 }
 
-pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize, verbose: &usize) -> Option<(f64, f64, f64, PValMetadata)> {
+pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize, verbose: &usize) -> Option<(f64, PValMetadata)> {
     if nrow < 2 || ncol < 2 {
         eprintln!("nrow ({}) or ncol ({}) not large enough for Fisher's exact test", nrow, ncol);
         quit::with_code(1);
@@ -477,23 +238,15 @@ pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize, verbose: &usi
     let (col_one, col_two) = top_two(&cs, ncol);
 
     if rs[row_one] > 0 && rs[row_two] > 0 && cs[col_one] > 0 && cs[col_two] > 0 {
-        let (left, right, two) = match fisher_exact(
+        let p_value = fishers_exact(
             fm[N_METH_STATES*row_one+col_one],
             fm[N_METH_STATES*row_one+col_two],
             fm[N_METH_STATES*row_two+col_one],
             fm[N_METH_STATES*row_two+col_two]
-        ) {
-            Ok((l, r, t)) => (l, r, t),
-            Err(e) => {
-                if *verbose >= 2 {
-                    eprintln!("NOTE: {}. Skipping.", e);
-                }
-                return None;
-            },
-        };
+        );
 
         return Some(
-            (left, right, two,
+            (p_value,
              PValMetadata::new(
                  Base::from_usize(row_one).unwrap(),
                  Base::from_usize(row_two).unwrap(),

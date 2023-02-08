@@ -327,8 +327,8 @@ fn find_p_values(locs: &Vec<Pair>, verbose: &usize) -> Vec<SnpCpgData> {
                             chrm.clone(),
                             snp_prev,
                             cpg_prev,
-                            p_vals.unwrap().2,
-                            p_vals.unwrap().3
+                            p_vals.unwrap().0,
+                            p_vals.unwrap().1
                         )
                     );
                 }
@@ -355,8 +355,8 @@ fn find_p_values(locs: &Vec<Pair>, verbose: &usize) -> Vec<SnpCpgData> {
                     chrm.clone(),
                     snp_curr,
                     cpg_curr,
-                    p_vals.unwrap().2,
-                    p_vals.unwrap().3
+                    p_vals.unwrap().0,
+                    p_vals.unwrap().1
                 )
             );
         }
