@@ -1,7 +1,7 @@
 /// Parse region string
 pub fn parse_region(r: &String) -> (String, u64, u64) {
     if r == "all" {
-        return ("all".to_owned(), u64::MAX, u64::MAX)
+        return ("all".to_owned(), 0, u64::MAX)
     }
 
     if !r.contains(":") && !r.contains("-") {

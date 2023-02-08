@@ -29,14 +29,16 @@ pub struct Record {
     read_number: u8,
     /// BS strand (+ for OT/CTOT, - for OB/CTOB)
     bs_strand: char,
-    /// string for CpG methylation/SNPs
+    /// string for CpG methylation
     cpg: String,
-    /// string for GpC methylation/SNPs (None if not included)
+    /// string for GpC methylation (None if not included)
     gpc: Option<String>,
+    /// string for SNPs and other variants
+    snp: String,
 }
 
 impl Record {
-    pub fn new(chr: String, start: u64, end: u64, name: String, rn: u8, bss: char, cpg: String, gpc: Option<String>) -> Record {
+    pub fn new(chr: String, start: u64, end: u64, name: String, rn: u8, bss: char, cpg: String, gpc: Option<String>, snp: String) -> Record {
         Record {
             chr: chr,
             start: start,
@@ -45,7 +47,8 @@ impl Record {
             read_number: rn,
             bs_strand: bss,
             cpg: cpg,
-            gpc: gpc
+            gpc: gpc,
+            snp: snp
         }
     }
 
@@ -84,6 +87,10 @@ impl Record {
     pub fn get_gpc(&self) -> &Option<String> {
         &self.gpc
     }
+
+    pub fn get_snp(&self) -> &String {
+        &self.snp
+    }
 }
 
 impl fmt::Display for Record {
@@ -105,6 +112,8 @@ impl fmt::Display for Record {
         };
         s = format!("{}\nGpC: {}\n", s, gpc);
 
+        s = format!("{}\nSNP: {}\n", s, self.snp);
+
         write!(f, "{}", s)
     }
 }
@@ -118,7 +127,7 @@ impl FromStr for Record {
         }
 
         let vec: Vec<&str> = record.split("\t").collect();
-        if vec.len() < 7 || vec.len() > 8 {
+        if vec.len() != 9 {
             return Err(RecordParseError::BadLen);
         }
 
@@ -131,6 +140,7 @@ impl FromStr for Record {
         let read_number: u8 = vec[4].parse().unwrap();
         let bs_strand: char = tmp[0];
         let cpg: String     = utils::decode_rle(&String::from(vec[6]));
+        let snp: String     = utils::decode_rle(&String::from(vec[8]));
 
         let gpc = if vec.len() == 8 {
             Some(utils::decode_rle(&String::from(vec[7])))
@@ -148,6 +158,7 @@ impl FromStr for Record {
                 bs_strand: bs_strand,
                 cpg: cpg,
                 gpc: gpc,
+                snp: snp,
             }
         )
     }

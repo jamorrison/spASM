@@ -1,62 +1,68 @@
-use std::fmt;
+use std::{
+    fmt,
+    cmp::Ordering,
+};
 
-use crate::constants::N_METH_STATES;
+use crate::constants::{
+    N_METH_STATES,
+    Base,
+};
 
 /// Type of SNP (A/C/G/T/N)
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
-pub enum SnpType {
-    SnpA = 0,
-    SnpC = 1,
-    SnpG = 2,
-    SnpT = 3,
-    SnpN = 4,
-}
-
-impl SnpType {
-    /// SnpType::from('A') == Ok(SnpType::SnpA)
-    pub fn from(c: char) -> Result<SnpType, ()> {
-        match c {
-            'A' => Ok(SnpType::SnpA),
-            'C' => Ok(SnpType::SnpC),
-            'G' => Ok(SnpType::SnpG),
-            'T' => Ok(SnpType::SnpT),
-            'N' => Ok(SnpType::SnpN),
-            _   => Err(()),
-        }
-    }
-
-    /// SnpType::from_usize(0) == Ok(SnpType::SnpA)
-    pub fn from_usize(i: usize) -> Result<SnpType, ()> {
-        match i {
-            0 => Ok(SnpType::SnpA),
-            1 => Ok(SnpType::SnpC),
-            2 => Ok(SnpType::SnpG),
-            3 => Ok(SnpType::SnpT),
-            4 => Ok(SnpType::SnpN),
-            _   => Err(()),
-        }
-    }
-}
-
-impl fmt::Display for SnpType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s: String = match self {
-            SnpType::SnpA => "A".to_string(),
-            SnpType::SnpC => "C".to_string(),
-            SnpType::SnpG => "G".to_string(),
-            SnpType::SnpT => "T".to_string(),
-            SnpType::SnpN => "N".to_string(),
-        };
-
-        write!(f, "{}", s)
-    }
-}
-
-impl Into<usize> for SnpType {
-    fn into(self) -> usize {
-        self as usize
-    }
-}
+//#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
+//pub enum SnpType {
+//    SnpA = 0,
+//    SnpC = 1,
+//    SnpG = 2,
+//    SnpT = 3,
+//    SnpN = 4,
+//}
+//
+//impl SnpType {
+//    /// SnpType::from('A') == Ok(SnpType::SnpA)
+//    pub fn from(c: char) -> Result<SnpType, ()> {
+//        match c {
+//            'A' => Ok(SnpType::SnpA),
+//            'C' => Ok(SnpType::SnpC),
+//            'G' => Ok(SnpType::SnpG),
+//            'T' => Ok(SnpType::SnpT),
+//            'N' => Ok(SnpType::SnpN),
+//            _   => Err(()),
+//        }
+//    }
+//
+//    /// SnpType::from_usize(0) == Ok(SnpType::SnpA)
+//    pub fn from_usize(i: usize) -> Result<SnpType, ()> {
+//        match i {
+//            0 => Ok(SnpType::SnpA),
+//            1 => Ok(SnpType::SnpC),
+//            2 => Ok(SnpType::SnpG),
+//            3 => Ok(SnpType::SnpT),
+//            4 => Ok(SnpType::SnpN),
+//            _   => Err(()),
+//        }
+//    }
+//}
+//
+//impl fmt::Display for SnpType {
+//    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//        let s: String = match self {
+//            SnpType::SnpA => "A".to_string(),
+//            SnpType::SnpC => "C".to_string(),
+//            SnpType::SnpG => "G".to_string(),
+//            SnpType::SnpT => "T".to_string(),
+//            SnpType::SnpN => "N".to_string(),
+//        };
+//
+//        write!(f, "{}", s)
+//    }
+//}
+//
+//impl Into<usize> for SnpType {
+//    fn into(self) -> usize {
+//        self as usize
+//    }
+//}
 
 /// Location and type of SNP
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
@@ -66,12 +72,12 @@ pub struct Snp {
     /// 0-based location
     pos: u64,
     /// SNP type
-    typ: SnpType,
+    typ: Base,
 }
 
 impl Snp {
     pub fn new(chr: String, pos: u64, typ: char) -> Snp {
-        Snp { chr: chr, pos: pos, typ: SnpType::from(typ).unwrap() }
+        Snp { chr: chr, pos: pos, typ: Base::from(typ).unwrap() }
     }
 
     pub fn get_chr(&self) -> &String {
@@ -86,7 +92,7 @@ impl Snp {
 impl fmt::Display for Snp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s: String = format!(
-            "Chromosome: {} Position: {} Type: {:?}",
+            "Chromosome: {} Position: {} Base: {}",
             self.chr,
             self.pos,
             self.typ,
@@ -175,7 +181,7 @@ impl fmt::Display for Cpg {
 }
 
 /// Store SNP-CpG pair information
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
+#[derive(Debug, Eq, PartialEq, Ord, Clone)]
 pub struct Pair {
     /// SNP
     snp: Snp,
@@ -197,7 +203,7 @@ impl Pair {
     }
 
     pub fn get_index(&self) -> usize {
-        N_METH_STATES*<SnpType as Into<usize>>::into(self.snp.typ) + <CpgType as Into<usize>>::into(self.cpg.typ)
+        N_METH_STATES*<Base as Into<usize>>::into(self.snp.typ) + <CpgType as Into<usize>>::into(self.cpg.typ)
     }
 }
 
@@ -210,5 +216,24 @@ impl fmt::Display for Pair {
         );
 
         write!(f, "{}", s)
+    }
+}
+
+impl PartialOrd for Pair {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // snp chromosome -> snp position -> cpg chromosome -> cpg position
+        if self.snp.chr == other.snp.chr {
+            if self.snp.pos == other.snp.pos {
+                if self.cpg.chr == other.cpg.chr {
+                    self.cpg.pos.partial_cmp(&other.cpg.pos)
+                } else {
+                    self.cpg.chr.partial_cmp(&other.cpg.chr)
+                }
+            } else {
+                self.snp.pos.partial_cmp(&other.snp.pos)
+            }
+        } else {
+            self.snp.chr.partial_cmp(&other.snp.chr)
+        }
     }
 }
