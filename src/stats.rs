@@ -72,11 +72,6 @@ pub fn fishers_exact(m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
     p
 }
 
-fn kinda_round(f: f64, n: u32) -> f64 {
-    let exp = 10_i32.pow(n) as f64;
-    (f * exp).round() / exp
-}
-
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 pub struct PValMetadata {
     /// SNP1
@@ -140,8 +135,7 @@ impl SnpCpgData {
         };
 
         format!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
-            //"{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:10.16e}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.10e}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             self.chr,
             self.snp_pos,
             self.snp_pos+1,
@@ -165,8 +159,7 @@ impl SnpCpgData {
     /// chr, snp position, cpg position, SNP1, SNP2, CPG1, CPG2, m11, m12, m21, m22, p-value
     pub fn to_biscuit_asm(&self) -> String {
         format!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
-            //"{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:10.6e}\n",
+            "{}\t{}\t{}\t{}/{}\t{}/{}\t{}\t{}\t{}\t{}\t{:.10e}\t.\n",
             self.chr,
             self.snp_pos,
             self.cpg_pos,
@@ -223,7 +216,7 @@ impl PartialOrd for SnpCpgData {
     }
 }
 
-pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize, verbose: &usize) -> Option<(f64, PValMetadata)> {
+pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Option<(f64, PValMetadata)> {
     if nrow < 2 || ncol < 2 {
         eprintln!("nrow ({}) or ncol ({}) not large enough for Fisher's exact test", nrow, ncol);
         quit::with_code(1);

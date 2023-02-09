@@ -301,7 +301,7 @@ fn create_snp_cpg_pairs(fr: &HashMap::<String, Vec<Record>>, redist: &HashMap::<
     out
 }
 
-fn find_p_values(locs: &Vec<Pair>, verbose: &usize) -> Vec<SnpCpgData> {
+fn find_p_values(locs: &Vec<Pair>) -> Vec<SnpCpgData> {
     let length = constants::N_METH_STATES * constants::N_BASES;
 
     let mut chrm = String::from("");
@@ -319,7 +319,7 @@ fn find_p_values(locs: &Vec<Pair>, verbose: &usize) -> Vec<SnpCpgData> {
 
         if chrm == "" || cpg_curr != cpg_prev || snp_curr != snp_prev || chrm != *l.get_snp().get_chr() {
             if chrm != "" {
-                let p_vals = stats::calculate_p_values(&flat_matrix, constants::N_BASES, constants::N_METH_STATES, verbose);
+                let p_vals = stats::calculate_p_values(&flat_matrix, constants::N_BASES, constants::N_METH_STATES);
 
                 if !p_vals.is_none() {
                     out.push(
@@ -347,7 +347,7 @@ fn find_p_values(locs: &Vec<Pair>, verbose: &usize) -> Vec<SnpCpgData> {
 
     // Catch remaining values
     if chrm != "" {
-        let p_vals = stats::calculate_p_values(&flat_matrix, constants::N_BASES, constants::N_METH_STATES, verbose);
+        let p_vals = stats::calculate_p_values(&flat_matrix, constants::N_BASES, constants::N_METH_STATES);
 
         if !p_vals.is_none() {
             out.push(
@@ -419,7 +419,7 @@ fn main() {
     let locations = create_snp_cpg_pairs(&file_records, &redist, &args.fragment, &r_chr, &r_start, &r_end, &args.verbose);
 
     // Find p-values from inputs
-    let mut p_vals = find_p_values(&locations, &args.verbose);
+    let mut p_vals = find_p_values(&locations);
 
     // Perform p-value false discovery rate correction
     let n = p_vals.len();
