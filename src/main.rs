@@ -102,6 +102,7 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, chr: &str, start: &u64, end: 
             eprintln!("NOTE: You requested that all reads be read. This may take a long time for large epiBEDs");
         }
 
+        // TODO: Count number of reads and print the number under DEBUG verbose
         let file = match bgzf::Reader::from_path(fname) {
             Ok(f) => f,
             Err(_) => {
@@ -407,6 +408,7 @@ fn write_data(fh: &mut bgzf::Writer, data: &Vec<SnpCpgData>, is_biscuit: bool, c
 
 fn main() {
     // Command line arguments
+    // TODO: Add an option to read a BED file of desired locations
     let args = Args::parse();
 
     // Chromosome, start, and end of region of interest
