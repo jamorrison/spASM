@@ -95,9 +95,10 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
     }
 
     if new_end - new_start != new_cpg.len() as u64 {
-        eprintln!("Malformed collapsed fragment.",);
+        eprintln!("Malformed collapsed fragment. (dovetail)",);
         eprintln!("Read 1: {}", r1);
         eprintln!("Read 2: {}", r2);
+        eprintln!("Fragment length: {}, end-start: {}", new_cpg.len(), new_end-new_start);
         quit::with_code(1);
     }
 
@@ -157,9 +158,10 @@ fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
     }
 
     if new_end - new_start != new_cpg.len() as u64 {
-        eprintln!("Malformed collapsed fragment.",);
+        eprintln!("Malformed collapsed fragment (proper pair).",);
         eprintln!("Read 1: {}", r1);
         eprintln!("Read 2: {}", r2);
+        eprintln!("Fragment length: {}, end-start: {}", new_cpg.len(), new_end-new_start);
         quit::with_code(1);
     }
 
