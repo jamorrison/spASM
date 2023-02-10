@@ -110,7 +110,7 @@ impl fmt::Display for Record {
             Some(rle) => rle.clone(),
             None => String::from("NA"),
         };
-        s = format!("{}\nGpC: {}\n", s, gpc);
+        s = format!("{}\nGpC: {}", s, gpc);
 
         s = format!("{}\nSNP: {}\n", s, self.snp);
 
@@ -131,6 +131,8 @@ impl FromStr for Record {
             return Err(RecordParseError::BadLen);
         }
 
+        // TODO: Remove insert values (acgtni) from cpg, gpc, and snp
+        // let s = s.replace(&['a', 'c', 'g', 't', 'n', 'i'][..], "");
         let tmp: Vec<char> = vec[5].chars().collect();
 
         let chr: String     = String::from(vec[0]);
