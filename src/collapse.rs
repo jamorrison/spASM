@@ -39,7 +39,6 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
     let mut new_end: u64 = *r1.get_end();
     let mut new_cpg;
     let mut new_snp;
-    let mut new_gpc: Option<String> = None;
 
     if r2.get_end() > r1.get_start() {
         // Difference in start locations
@@ -51,15 +50,6 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
         new_cpg    = format!("{}{}", r2_cpg, r1.get_cpg());
         new_snp    = format!("{}{}", r2_snp, r1.get_snp());
 
-        // Set GpC string if it exists
-        if !r1.get_gpc().is_none() {
-            let r1_gpc = r1.get_gpc().as_ref().unwrap();
-            let r2_gpc = r2.get_gpc().as_ref().unwrap();
-
-            let tmp = &r2_gpc[..diff].to_string();
-            new_gpc = Some(format!("{}{}", tmp, r1_gpc));
-        }
-
         // Handle case where read 2 starts before read 1 and ends after it
         if r2.get_end() > r1.get_end() {
             new_end = *r2.get_end();
@@ -69,12 +59,6 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
             let r2_snp           = r2.get_snp()[tmp_start..].to_string();
             new_cpg              = format!("{}{}", new_cpg, r2_cpg);
             new_snp              = format!("{}{}", new_snp, r2_snp);
-
-            if !r1.get_gpc().is_none() {
-                let r2_gpc = r2.get_gpc().as_ref().unwrap();
-                let tmp    = &r2_gpc[tmp_start..].to_string();
-                new_gpc = Some(format!("{}{}", new_gpc.unwrap(), tmp));
-            }
         }
     } else {
         // Difference in start locations
@@ -85,13 +69,6 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
 
         new_cpg = format!("{}{}{}", r2.get_cpg(), pad, r1.get_cpg());
         new_snp = format!("{}{}{}", r2.get_snp(), pad, r1.get_snp());
-
-        // Handle GpC if it exists
-        if !r1.get_gpc().is_none() {
-            let r1_gpc = r1.get_gpc().as_ref().unwrap();
-            let r2_gpc = r2.get_gpc().as_ref().unwrap();
-            new_gpc = Some(format!("{}{}{}", r2_gpc, pad, r1_gpc));
-        }
     }
 
     if new_end - new_start != new_cpg.len() as u64 {
@@ -110,7 +87,6 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
         0,
         *r1.get_bs_strand(),
         new_cpg,
-        new_gpc,
         new_snp,
     )
 }
@@ -121,7 +97,6 @@ fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
     let     new_end: u64 = *r2.get_end();
     let     new_cpg;
     let     new_snp;
-    let mut new_gpc: Option<String> = None;
 
     if r2.get_start() > r1.get_end() {
         // Difference between end of read 1 and start of read 2
@@ -132,13 +107,6 @@ fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
 
         new_cpg = format!("{}{}{}", r1.get_cpg(), pad, r2.get_cpg());
         new_snp = format!("{}{}{}", r1.get_snp(), pad, r2.get_snp());
-
-        // Handle GpC if it exists
-        if !r1.get_gpc().is_none() {
-            let r1_gpc = r1.get_gpc().as_ref().unwrap();
-            let r2_gpc = r2.get_gpc().as_ref().unwrap();
-            new_gpc = Some(format!("{}{}{}", r1_gpc, pad, r2_gpc));
-        }
     } else {
         let diff: usize = (r1.get_end() - r2.get_start()).try_into().unwrap();
 
@@ -146,15 +114,6 @@ fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
         let r2_snp = r2.get_snp()[diff..].to_string();
         new_cpg    = format!("{}{}", r1.get_cpg(), r2_cpg);
         new_snp    = format!("{}{}", r1.get_snp(), r2_snp);
-
-        // Handle GpC if it exists
-        if !r1.get_gpc().is_none() {
-            let r1_gpc = r1.get_gpc().as_ref().unwrap();
-            let r2_gpc = r2.get_gpc().as_ref().unwrap();
-
-            let tmp = &r2_gpc[diff..].to_string();
-            new_gpc = Some(format!("{}{}", r1_gpc, tmp));
-        }
     }
 
     if new_end - new_start != new_cpg.len() as u64 {
@@ -173,7 +132,6 @@ fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
         0,
         *r1.get_bs_strand(),
         new_cpg,
-        new_gpc,
         new_snp,
     )
 }

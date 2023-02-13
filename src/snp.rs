@@ -13,16 +13,10 @@ use crate::records::Record;
 
 /// count the number of reads with a given base at each snp location
 pub fn snp_support(r: &Record, support: &mut HashMap::<String, Vec<u16>>) {
-    let mut ins_count: u64 = 0;
     let mut pos: u64;
     for (i, c) in r.get_snp().chars().enumerate() {
-        pos = r.get_start() + i as u64 - ins_count;
+        pos = r.get_start() + i as u64;
         match c {
-            // insertions aren't counted, but we do need to account for them for the snp position
-            'a' | 'c' | 'g' | 't' | 'n' => {
-                ins_count += 1;
-                continue;
-            },
             'A' | 'C' | 'G' | 'T' | 'R' | 'Y' | 'N' => {
                 let name = format!("{}:{}-{}", r.get_chr(), pos, pos);
                 match support.get_mut(&name) {

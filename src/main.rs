@@ -201,7 +201,7 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, chr: &str, start: &u64, end: 
 
 /// Loop over records, collapse fragment if requested, then loop over each vector entry to pull out
 /// CpGs and SNPs to form input to ASM calculation
-fn create_snp_cpg_pairs(fr: &HashMap::<String, Vec<Record>>, redist: &HashMap::<String, Vec<Option<char>>>, fragment: &bool, chr: &String, start: &u64, end: &u64, verbose: &usize) -> Vec<Pair> {
+fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, Vec<Option<char>>>, fragment: &bool, chr: &String, start: &u64, end: &u64, verbose: &usize) -> Vec<Pair> {
     let mut out: Vec<Pair> = Vec::new();
 
     for val in fr.values() {
@@ -222,21 +222,19 @@ fn create_snp_cpg_pairs(fr: &HashMap::<String, Vec<Record>>, redist: &HashMap::<
         };
 
         let mut i: u64;
-        let mut ins_count: u64;
         let mut pos: u64;
         let mut snps: Vec<Snp> = Vec::new();
         let mut cpgs: Vec<Cpg> = Vec::new();
         for v in process {
             // Clear values for next read
             i = 0;
-            ins_count = 0;
             snps.clear();
             cpgs.clear();
 
             // Loop over characters in CpG and variant RLE strings
             for it in v.get_cpg().chars().zip(v.get_snp().chars()) {
                 let (cg, vr) = it;
-                pos = v.get_start() + i - ins_count;
+                pos = v.get_start() + i;
 
                 i += 1;
 
@@ -274,10 +272,6 @@ fn create_snp_cpg_pairs(fr: &HashMap::<String, Vec<Record>>, redist: &HashMap::<
 
                         snps.push(Snp::new(v.get_chr().clone(), pos, s));
                     },
-                    'a' | 'c' | 'g' | 't' | 'n' => {
-                        ins_count += 1;
-                        continue;
-                    },
                     _ => {
                         continue;
                     }
@@ -302,7 +296,7 @@ fn create_snp_cpg_pairs(fr: &HashMap::<String, Vec<Record>>, redist: &HashMap::<
     out
 }
 
-fn find_p_values(locs: &Vec<Pair>) -> Vec<SnpCpgData> {
+fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
     let length = constants::N_METH_STATES * constants::N_BASES;
 
     let mut chrm = String::from("");
@@ -418,13 +412,14 @@ fn main() {
     let (file_records, redist) = process_file(&args.path, &args.genome, &r_chr, &r_start, &r_end, &args.verbose).expect("Error parsing file.");
 
     // Pull out matched SNP-CpG pairs from reads/fragments
-    let locations = create_snp_cpg_pairs(&file_records, &redist, &args.fragment, &r_chr, &r_start, &r_end, &args.verbose);
+    let locations = create_snp_cpg_pairs(file_records, redist, &args.fragment, &r_chr, &r_start, &r_end, &args.verbose);
 
     // Find p-values from inputs
-    let mut p_vals = find_p_values(&locations);
+    let mut p_vals = find_p_values(locations);
 
     // Perform p-value false discovery rate correction
     let n = p_vals.len();
+    // TODO: I think I can do this p-correction in place, which would save on some memory
     let p_corrected = stats::false_discovery_correction(&mut p_vals, &args.fdr, n);
 
     // Write data to output

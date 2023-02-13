@@ -31,14 +31,12 @@ pub struct Record {
     bs_strand: char,
     /// string for CpG methylation
     cpg: String,
-    /// string for GpC methylation (None if not included)
-    gpc: Option<String>,
     /// string for SNPs and other variants
     snp: String,
 }
 
 impl Record {
-    pub fn new(chr: String, start: u64, end: u64, name: String, rn: u8, bss: char, cpg: String, gpc: Option<String>, snp: String) -> Record {
+    pub fn new(chr: String, start: u64, end: u64, name: String, rn: u8, bss: char, cpg: String, snp: String) -> Record {
         Record {
             chr: chr,
             start: start,
@@ -47,7 +45,6 @@ impl Record {
             read_number: rn,
             bs_strand: bss,
             cpg: cpg,
-            gpc: gpc,
             snp: snp
         }
     }
@@ -84,10 +81,6 @@ impl Record {
         &self.cpg
     }
 
-    pub fn get_gpc(&self) -> &Option<String> {
-        &self.gpc
-    }
-
     pub fn get_snp(&self) -> &String {
         &self.snp
     }
@@ -95,8 +88,8 @@ impl Record {
 
 impl fmt::Display for Record {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut s: String = format!(
-            "Chromosome: {}\nStart: {}\nEnd: {}\nName: {}\nRead Number: {}\nBS Strand: {}\nCpG: {}",
+        let s: String = format!(
+            "Chromosome: {}\nStart: {}\nEnd: {}\nName: {}\nRead Number: {}\nBS Strand: {}\nCpG: {}\nSNP: {}",
             self.chr,
             self.start,
             self.end,
@@ -104,15 +97,8 @@ impl fmt::Display for Record {
             self.read_number,
             self.bs_strand,
             self.cpg,
+            self.snp,
         );
-
-        let gpc = match &self.gpc {
-            Some(rle) => rle.clone(),
-            None => String::from("NA"),
-        };
-        s = format!("{}\nGpC: {}", s, gpc);
-
-        s = format!("{}\nSNP: {}\n", s, self.snp);
 
         write!(f, "{}", s)
     }
@@ -131,7 +117,7 @@ impl FromStr for Record {
             return Err(RecordParseError::BadLen);
         }
 
-        // TODO: Remove insert values (acgtni) from cpg, gpc, and snp
+        // TODO: Remove insert values (acgtni) from cpg and snp
         // let s = s.replace(&['a', 'c', 'g', 't', 'n', 'i'][..], "");
         let tmp: Vec<char> = vec[5].chars().collect();
 
@@ -141,14 +127,8 @@ impl FromStr for Record {
         let name: String    = String::from(vec[3]);
         let read_number: u8 = vec[4].parse().unwrap();
         let bs_strand: char = tmp[0];
-        let cpg: String     = utils::decode_rle(&String::from(vec[6]));
-        let snp: String     = utils::decode_rle(&String::from(vec[8]));
-
-        let gpc = if vec.len() == 8 {
-            Some(utils::decode_rle(&String::from(vec[7])))
-        } else {
-            None
-        };
+        let cpg: String     = utils::decode_rle(&String::from(vec[6])).replace(&['a', 'c', 'g', 't', 'n', 'i'][..], "");
+        let snp: String     = utils::decode_rle(&String::from(vec[8])).replace(&['a', 'c', 'g', 't', 'n', 'i'][..], "");
 
         Ok (
             Record {
@@ -159,7 +139,6 @@ impl FromStr for Record {
                 read_number: read_number,
                 bs_strand: bs_strand,
                 cpg: cpg,
-                gpc: gpc,
                 snp: snp,
             }
         )
