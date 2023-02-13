@@ -42,6 +42,6 @@ spasm [options] <GENOME> <EPIBED>
 | `O`                | `candidate`        | write only candidate locations, FDR-corrected p-value based on all locations probed | all locations printed          |
 | `N`                | `no-ambiguous`     | write only locations with no ambiguous SNPs                                         | all SNPs are written           |
 | `b`                | `biscuit`          | write in BISCUIT ASM output format                                                  | output written in BEDPE format |
-| `v`                | `verbose`          | verbosity level (0: ERRORS ONLY | 1: WARNINGS + ERRORS | 2+: ALL)                   | 1                              |
+| `v`                | `verbose`          | verbosity level (0: ERRORS ONLY, 1: WARNINGS + ERRORS, 2+: ALL)                     | 1                              |
 | `h`                | `help`             | Print help                                                                          |                                |
 | `V`                | `version`          | Print version                                                                       |                                |
