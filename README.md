@@ -32,16 +32,16 @@ spasm [options] <GENOME> <EPIBED>
 | EPIBED | Your epiBED file (if running with `-g`, then it must be bgzipped and tabixed) |
 
 ### Optional Arguments
-| Short Option | Long Option      | Description | Default |
-|:------------:|:----------------:|:------------|:--------|
-|:    `-g`    :| `--region`       | region to extract (chr:start-end or chr)                                            | all                            |
-|:    `-f`    :| `--fragment`     | collapse reads to fragment-level                                                    | left as individual fragments   |
-|:    `-c`    :| `--fdr`          | type of false discovery rate correction to perform possibilities: BH (Benjamini-Hochberg), BY (Benjamini-Yekutieli), Bonferroni, Hochberg, Holm, No (do not apply false discovery correction) | BH |
-|:    `-p`    :| `--pcutoff`      | p-value significance cutoff                                                         | 0.05                           |
-|:    `-o`    :| `--output`       | output file name, compression level based on file name                              | stdout                         |
-|:    `-O`    :| `--candidate`    | write only candidate locations, FDR-corrected p-value based on all locations probed | all locations printed          |
-|:    `-N`    :| `--no-ambiguous` | write only locations with no ambiguous SNPs                                         | all SNPs are written           |
-|:    `-b`    :| `--biscuit`      | write in BISCUIT ASM output format                                                  | output written in BEDPE format |
-|:    `-v`    :| `--verbose`      | verbosity level (0: ERRORS ONLY | 1: WARNINGS + ERRORS | 2+: ALL)                   | 1                              |
-|:    `-h`    :| `--help`         | Print help                                                                          |                                |
-|:    `-V`    :| `--version`      | Print version                                                                       |                                |
+| Short Option (`-`) | Long Option (`--`) | Description                                                                         | Default                        |
+|:------------------:|:------------------:|:------------------------------------------------------------------------------------|:-------------------------------|
+| `g`                | `region`           | region to extract (chr:start-end or chr)                                            | all                            |
+| `f`                | `fragment`         | collapse reads to fragment-level                                                    | left as individual fragments   |
+| `c`                | `fdr`              | type of false discovery rate correction to perform possibilities: BH (Benjamini-Hochberg), BY (Benjamini-Yekutieli), Bonferroni, Hochberg, Holm, No (do not apply false discovery correction) | BH |
+| `p`                | `pcutoff`          | p-value significance cutoff                                                         | 0.05                           |
+| `o`                | `output`           | output file name, compression level based on file name                              | stdout                         |
+| `O`                | `candidate`        | write only candidate locations, FDR-corrected p-value based on all locations probed | all locations printed          |
+| `N`                | `no-ambiguous`     | write only locations with no ambiguous SNPs                                         | all SNPs are written           |
+| `b`                | `biscuit`          | write in BISCUIT ASM output format                                                  | output written in BEDPE format |
+| `v`                | `verbose`          | verbosity level (0: ERRORS ONLY | 1: WARNINGS + ERRORS | 2+: ALL)                   | 1                              |
+| `h`                | `help`             | Print help                                                                          |                                |
+| `V`                | `version`          | Print version                                                                       |                                |
