@@ -52,9 +52,9 @@ struct Args {
     #[clap(short = 'g', long, default_value_t = String::from("all"))]
     region: String,
 
-    /// collapse reads to fragment-level
+    /// merge read mates into a single fragment
     #[clap(short, long, action)]
-    fragment: bool,
+    merge_mates: bool,
 
     /// type of false discovery rate correction to perform
     /// possibilities:
@@ -199,9 +199,9 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, chr: &str, start: &u64, end: 
     Ok((records, dist_ambig))
 }
 
-/// Loop over records, collapse fragment if requested, then loop over each vector entry to pull out
+/// Loop over records, collapse mates if requested, then loop over each vector entry to pull out
 /// CpGs and SNPs to form input to ASM calculation
-fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, Vec<Option<char>>>, fragment: &bool, chr: &String, start: &u64, end: &u64, verbose: &usize) -> Vec<Pair> {
+fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, Vec<Option<char>>>, merge: &bool, chr: &String, start: &u64, end: &u64, verbose: &usize) -> Vec<Pair> {
     let mut out: Vec<Pair> = Vec::new();
 
     for val in fr.values() {
@@ -214,8 +214,8 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
             continue;
         }
 
-        // Collapse to fragment if desired and able
-        let process: Vec<Record> = if *fragment && val.len() != 1 {
+        // Collapse to single fragment if desired and able
+        let process: Vec<Record> = if *merge && val.len() != 1 {
             collapse::collapse_to_fragment(val)
         } else {
             val.to_vec()
@@ -412,7 +412,7 @@ fn main() {
     let (file_records, redist) = process_file(&args.path, &args.genome, &r_chr, &r_start, &r_end, &args.verbose).expect("Error parsing file.");
 
     // Pull out matched SNP-CpG pairs from reads/fragments
-    let locations = create_snp_cpg_pairs(file_records, redist, &args.fragment, &r_chr, &r_start, &r_end, &args.verbose);
+    let locations = create_snp_cpg_pairs(file_records, redist, &args.merge_mates, &r_chr, &r_start, &r_end, &args.verbose);
 
     // Find p-values from inputs
     let mut p_vals = find_p_values(locations);

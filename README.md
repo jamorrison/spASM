@@ -35,7 +35,7 @@ spasm [options] <GENOME> <EPIBED>
 | Short Option (`-`) | Long Option (`--`) | Description                                                                         | Default                        |
 |:------------------:|:------------------:|:------------------------------------------------------------------------------------|:-------------------------------|
 | `g`                | `region`           | region to extract (chr:start-end or chr)                                            | all                            |
-| `f`                | `fragment`         | collapse reads to fragment-level                                                    | left as individual fragments   |
+| `m`                | `merge-mates`      | merge read mates into a single fragment                                             | left as individual reads       |
 | `c`                | `fdr`              | type of false discovery rate correction to perform possibilities: BH (Benjamini-Hochberg), BY (Benjamini-Yekutieli), Bonferroni, Hochberg, Holm, No (do not apply false discovery correction) | BH |
 | `p`                | `pcutoff`          | p-value significance cutoff                                                         | 0.05                           |
 | `o`                | `output`           | output file name, compression level based on file name                              | stdout                         |
@@ -45,6 +45,19 @@ spasm [options] <GENOME> <EPIBED>
 | `v`                | `verbose`          | verbosity level (0: ERRORS ONLY, 1: WARNINGS + ERRORS, 2+: ALL)                     | 1                              |
 | `h`                | `help`             | Print help                                                                          |                                |
 | `V`                | `version`          | Print version                                                                       |                                |
+
+## Merging Mates in Paired-End Data
+
+In paired-end sequencing, the two read mates come from the same DNA fragment, so it may be desirable to merge the two
+reads into a single fragment. On a qualitative level, spASM will take the unique portions of reads 1 and 2, plus the
+read 1 portion of any locations that overlap between the two reads. With respect to those overlapping regions, it should
+be noted:
+
+  - spASM will use the data as it comes from `biscuit epiread`. By default, `biscuit epiread` will filter overlapping
+  bases (including CpGs and SNPs) from read 2. This will then be passed to spASM, which will see these as filtered bases
+  and won't include them in any calculations.
+  - The only way to double count information from overlapping portions of reads 1 and 2 would be to include the `-d` in
+  `biscuit epiread`.
 
 ## Output
 
