@@ -5,7 +5,7 @@ pub fn parse_region(r: &String) -> (String, u64, u64) {
     }
 
     if !r.contains(":") && !r.contains("-") {
-        return (r.clone(), 0, u64::MAX)
+        return (r.clone(), 0, u32::MAX as u64)
     }
 
     let r_1: Vec<&str> = r.split(":").collect();
