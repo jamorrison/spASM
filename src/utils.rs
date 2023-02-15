@@ -1,3 +1,5 @@
+use crate::constants::HTS_MAX_64;
+
 /// Parse region string
 pub fn parse_region(r: &String) -> (String, u64, u64) {
     if r == "all" {
@@ -5,7 +7,7 @@ pub fn parse_region(r: &String) -> (String, u64, u64) {
     }
 
     if !r.contains(":") && !r.contains("-") {
-        return (r.clone(), 0, u32::MAX as u64)
+        return (r.clone(), 0, HTS_MAX_64);
     }
 
     let r_1: Vec<&str> = r.split(":").collect();

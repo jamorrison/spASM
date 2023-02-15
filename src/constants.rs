@@ -9,6 +9,9 @@ pub const N_METH_STATES: usize = 2;
 /// Number of SNPs available (A/T/C/G/N)
 pub const N_BASES: usize = 7;
 
+/// htslib has a different maximum value for their 64 bit int
+pub const HTS_MAX_64: u64 = ((i32::MAX as u64) << 32) | (i32::MAX as u64);
+
 /// Base support
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 pub enum Base {
