@@ -52,9 +52,12 @@ struct Args {
     #[clap(short = 'g', long, default_value_t = String::from("all"))]
     region: String,
 
-    /// merge read mates into a single fragment
+    /// read mates come from the same original DNA fragment, therefore they represent the same
+    /// "epi-haplotype". To recover this correlation, mate reads are merged into a single fragment.
+    /// However, there may be cases where mate reads need to be treated individually. This option
+    /// provides the ability to avoid merging mate reads.
     #[clap(short, long, action)]
-    merge_mates: bool,
+    no_mate_merging: bool,
 
     /// type of false discovery rate correction to perform
     /// possibilities:
@@ -412,7 +415,10 @@ fn main() {
     let (file_records, redist) = process_file(&args.path, &args.genome, &r_chr, &r_start, &r_end, &args.verbose).expect("Error parsing file.");
 
     // Pull out matched SNP-CpG pairs from reads/fragments
-    let locations = create_snp_cpg_pairs(file_records, redist, &args.merge_mates, &r_chr, &r_start, &r_end, &args.verbose);
+    // default is to merge mates, so when --no-mate-merging is given, the value is set to true
+    // therefore, we want to take the opposite of what no_mate_merging to get the code to do what
+    // we want it to
+    let locations = create_snp_cpg_pairs(file_records, redist, &(!args.no_mate_merging), &r_chr, &r_start, &r_end, &args.verbose);
 
     // Find p-values from inputs
     let mut p_vals = find_p_values(locations);
