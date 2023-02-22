@@ -40,7 +40,7 @@ use crate::stats::{
 #[derive(Parser, Debug)]
 #[clap(name = "spasm")]
 #[clap(author = "Jacob Morrison <jacob.morrison@vai.org>")]
-#[clap(version = "version 1.0.0")]
+#[clap(version = "version 1.1.0")]
 struct Args {
     /// path to indexed reference FASTA
     genome: std::path::PathBuf,
@@ -95,7 +95,7 @@ struct Args {
     verbose: usize,
 }
 
-fn process_file(fname: &PathBuf, genome: &PathBuf, chr: &str, start: &u64, end: &u64, verbose: &usize) -> Result<(HashMap::<String, Vec<Record>>, HashMap::<String, Vec<Option<char>>>)> {
+fn process_file(fname: &PathBuf, genome: &PathBuf, chr: &str, start: &u32, end: &u32, verbose: &usize) -> Result<(HashMap::<String, Vec<Record>>, HashMap::<String, [Option<char>; 2]>)> {
     let mut line    = String::new();
     let mut records = HashMap::<String, Vec<Record>>::new();
     let mut support = HashMap::<String, Vec<u16>>::new();
@@ -170,7 +170,7 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, chr: &str, start: &u64, end: 
             },
         };
 
-        tbx_reader.fetch(tid, *start, *end).expect(&format!("Could not seek to {}:{}-{}", chr, start, end));
+        tbx_reader.fetch(tid, *start as u64, *end as u64).expect(&format!("Could not seek to {}:{}-{}", chr, start, end));
 
         for record in tbx_reader.records() {
             let rec = record.ok().unwrap();
@@ -204,7 +204,7 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, chr: &str, start: &u64, end: 
 
 /// Loop over records, collapse mates if requested, then loop over each vector entry to pull out
 /// CpGs and SNPs to form input to ASM calculation
-fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, Vec<Option<char>>>, merge: &bool, chr: &String, start: &u64, end: &u64, verbose: &usize) -> Vec<Pair> {
+fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, [Option<char>; 2]>, merge: &bool, chr: &String, start: &u32, end: &u32, verbose: &usize) -> Vec<Pair> {
     let mut out: Vec<Pair> = Vec::new();
 
     for val in fr.values() {
@@ -224,8 +224,8 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
             val.to_vec()
         };
 
-        let mut i: u64;
-        let mut pos: u64;
+        let mut i: u32;
+        let mut pos: u32;
         let mut snps: Vec<Snp> = Vec::new();
         let mut cpgs: Vec<Cpg> = Vec::new();
         for v in process {
@@ -247,12 +247,7 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
 
                 match cg {
                     'M' | 'U' => {
-                        let cg_pos = match v.get_bs_strand() {
-                            '+' => pos,
-                            '-' => pos-1,
-                            _   => unreachable!(),
-                        };
-
+                        let cg_pos = if *v.get_bs_strand() { pos } else { pos-1 };
                         cpgs.push(Cpg::new(v.get_chr().clone(), cg_pos, cg));
                     },
                     _ => {}
@@ -303,11 +298,11 @@ fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
     let length = constants::N_METH_STATES * constants::N_BASES;
 
     let mut chrm = String::from("");
-    let mut snp_prev: u64 = u64::MAX;
-    let mut cpg_prev: u64 = u64::MAX;
-    let mut snp_curr: u64 = u64::MAX;
-    let mut cpg_curr: u64 = u64::MAX;
-    let mut flat_matrix: Vec<i64> = vec![0; length];
+    let mut snp_prev: u32 = u32::MAX;
+    let mut cpg_prev: u32 = u32::MAX;
+    let mut snp_curr: u32 = u32::MAX;
+    let mut cpg_curr: u32 = u32::MAX;
+    let mut flat_matrix: Vec<u32> = vec![0; length];
     let mut index: usize;
 
     let mut out: Vec<SnpCpgData> = Vec::new();

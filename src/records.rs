@@ -20,15 +20,15 @@ pub struct Record {
     /// chromosome
     chr: String,
     /// 0-based start position
-    start: u64,
+    start: u32,
     /// 1-based, non-inclusive end position
-    end: u64,
+    end: u32,
     /// read name
     name: String,
     /// read number in paired-end sequencing (0 = fragment, 1 = read 1, 2 = read 2)
     read_number: u8,
-    /// BS strand (+ for OT/CTOT, - for OB/CTOB)
-    bs_strand: char,
+    /// BS strand (true for OT/CTOT, false for OB/CTOB)
+    bs_strand: bool,
     /// string for CpG methylation
     cpg: String,
     /// string for SNPs and other variants
@@ -36,7 +36,7 @@ pub struct Record {
 }
 
 impl Record {
-    pub fn new(chr: String, start: u64, end: u64, name: String, rn: u8, bss: char, cpg: String, snp: String) -> Record {
+    pub fn new(chr: String, start: u32, end: u32, name: String, rn: u8, bss: bool, cpg: String, snp: String) -> Record {
         Record {
             chr: chr,
             start: start,
@@ -53,11 +53,11 @@ impl Record {
         &self.chr
     }
 
-    pub fn get_start(&self) -> &u64 {
+    pub fn get_start(&self) -> &u32 {
         &self.start
     }
 
-    pub fn get_end(&self) -> &u64 {
+    pub fn get_end(&self) -> &u32 {
         &self.end
     }
 
@@ -73,7 +73,7 @@ impl Record {
         self.read_number = n;
     }
 
-    pub fn get_bs_strand(&self) -> &char {
+    pub fn get_bs_strand(&self) -> &bool {
         &self.bs_strand
     }
 
@@ -122,11 +122,11 @@ impl FromStr for Record {
         let tmp: Vec<char> = vec[5].chars().collect();
 
         let chr: String     = String::from(vec[0]);
-        let start: u64      = vec[1].parse().unwrap();
-        let end: u64        = vec[2].parse().unwrap();
+        let start: u32      = vec[1].parse().unwrap();
+        let end: u32        = vec[2].parse().unwrap();
         let name: String    = String::from(vec[3]);
         let read_number: u8 = vec[4].parse().unwrap();
-        let bs_strand: char = tmp[0];
+        let bs_strand: bool = if tmp[0] == '+' { true } else { false };
         let cpg: String     = utils::decode_rle(&String::from(vec[6])).replace(&['a', 'c', 'g', 't', 'n', 'i'][..], "");
         let snp: String     = utils::decode_rle(&String::from(vec[8])).replace(&['a', 'c', 'g', 't', 'n', 'i'][..], "");
 

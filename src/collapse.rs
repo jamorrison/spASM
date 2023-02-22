@@ -35,8 +35,8 @@ pub fn collapse_to_fragment(reads: &Vec<Record>) -> Vec<Record> {
 
 /// Collapse dovetail reads
 fn collapse_dovetail(r1: Record, r2: Record) -> Record {
-    let     new_start: u64 = *r2.get_start();
-    let mut new_end: u64 = *r1.get_end();
+    let     new_start: u32 = *r2.get_start();
+    let mut new_end: u32 = *r1.get_end();
     let mut new_cpg;
     let mut new_snp;
 
@@ -71,7 +71,7 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
         new_snp = format!("{}{}{}", r2.get_snp(), pad, r1.get_snp());
     }
 
-    if new_end - new_start != new_cpg.len() as u64 {
+    if new_end - new_start != new_cpg.len() as u32 {
         eprintln!("Malformed collapsed fragment. (dovetail)",);
         eprintln!("Read 1: {}", r1);
         eprintln!("Read 2: {}", r2);
@@ -93,8 +93,8 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
 
 /// Collapse canonically-paired reads
 fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
-    let     new_start: u64 = *r1.get_start();
-    let     new_end: u64 = *r2.get_end();
+    let     new_start: u32 = *r1.get_start();
+    let     new_end: u32 = *r2.get_end();
     let     new_cpg;
     let     new_snp;
 
@@ -116,7 +116,7 @@ fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
         new_snp    = format!("{}{}", r1.get_snp(), r2_snp);
     }
 
-    if new_end - new_start != new_cpg.len() as u64 {
+    if new_end - new_start != new_cpg.len() as u32 {
         eprintln!("Malformed collapsed fragment (proper pair).",);
         eprintln!("Read 1: {}", r1);
         eprintln!("Read 2: {}", r2);

@@ -1,13 +1,11 @@
-use crate::constants::HTS_MAX_64;
-
 /// Parse region string
-pub fn parse_region(r: &String) -> (String, u64, u64) {
+pub fn parse_region(r: &String) -> (String, u32, u32) {
     if r == "all" {
-        return ("all".to_owned(), 0, u64::MAX)
+        return ("all".to_owned(), 0, u32::MAX)
     }
 
     if !r.contains(":") && !r.contains("-") {
-        return (r.clone(), 0, HTS_MAX_64);
+        return (r.clone(), 0, u32::MAX);
     }
 
     let r_1: Vec<&str> = r.split(":").collect();
@@ -23,8 +21,8 @@ pub fn parse_region(r: &String) -> (String, u64, u64) {
         quit::with_code(1);
     }
 
-    let start: u64 = r_2[0].parse::<u64>().unwrap();
-    let end: u64   = r_2[1].parse::<u64>().unwrap();
+    let start: u32 = r_2[0].parse::<u32>().unwrap();
+    let end: u32   = r_2[1].parse::<u32>().unwrap();
 
     (chr, start, end)
 }
@@ -58,8 +56,8 @@ pub fn decode_rle(s: &str) -> String {
 }
 
 /// find sum of rows in flattened matrix
-pub fn row_sums(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Vec<i64> {
-    let mut sums: Vec<i64> = vec![0; nrow];
+pub fn row_sums(fm: &Vec<u32>, nrow: usize, ncol: usize) -> Vec<u32> {
+    let mut sums: Vec<u32> = vec![0; nrow];
 
     for r in 0..nrow {
         for c in 0..ncol {
@@ -71,8 +69,8 @@ pub fn row_sums(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Vec<i64> {
 }
 
 /// find sum of columns in flattened matrix
-pub fn col_sums(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Vec<i64> {
-    let mut sums: Vec<i64> = vec![0; ncol];
+pub fn col_sums(fm: &Vec<u32>, nrow: usize, ncol: usize) -> Vec<u32> {
+    let mut sums: Vec<u32> = vec![0; ncol];
 
     for r in 0..nrow {
         for c in 0..ncol {
@@ -85,7 +83,7 @@ pub fn col_sums(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Vec<i64> {
 
 /// find indexes with the largest two values - takes the first occurrences of any matching largest
 /// values
-pub fn top_two(v: &Vec<i64>, n: usize) -> (usize, usize) {
+pub fn top_two(v: &Vec<u32>, n: usize) -> (usize, usize) {
     let (mut winner, mut first_loser): (usize, usize) = if v[0] > v[1] { (0, 1) } else { (1, 0) };
 
     if n > 2 {
@@ -111,7 +109,7 @@ mod test {
         let test: String = "chr1".to_string();
         let p = parse_region(&test);
 
-        assert_eq!(p, ("chr1".to_string(), 0, u64::MAX));
+        assert_eq!(p, ("chr1".to_string(), 0, u32::MAX));
     }
 
     #[test]
@@ -132,7 +130,7 @@ mod test {
 
     #[test]
     fn test_row_sums() {
-        let matrix: Vec<i64> = vec![1, 2, 3, 4, 5, 0, 1, 2, 3, 4];
+        let matrix: Vec<u32> = vec![1, 2, 3, 4, 5, 0, 1, 2, 3, 4];
         let rs = row_sums(&matrix, 2, 5);
 
         assert_eq!(rs, [15, 10]);
@@ -140,7 +138,7 @@ mod test {
 
     #[test]
     fn test_col_sums() {
-        let matrix: Vec<i64> = vec![1, 2, 3, 4, 5, 0, 1, 2, 3, 4];
+        let matrix: Vec<u32> = vec![1, 2, 3, 4, 5, 0, 1, 2, 3, 4];
         let cs = col_sums(&matrix, 2, 5);
 
         assert_eq!(cs, [1, 3, 5, 7, 9]);
@@ -148,7 +146,7 @@ mod test {
 
     #[test]
     fn test_top_two_input_2() {
-        let x: Vec<i64> = vec![15, 10];
+        let x: Vec<u32> = vec![15, 10];
         let (one, two) = top_two(&x, 2);
 
         assert_eq!((one, two), (0, 1))
@@ -156,7 +154,7 @@ mod test {
 
     #[test]
     fn test_top_two_input_5() {
-        let x: Vec<i64> = vec![1, 3, 5, 7, 9];
+        let x: Vec<u32> = vec![1, 3, 5, 7, 9];
         let (one, two) = top_two(&x, 5);
 
         assert_eq!((one, two), (4, 3))

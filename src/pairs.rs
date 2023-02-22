@@ -8,75 +8,19 @@ use crate::constants::{
     Base,
 };
 
-/// Type of SNP (A/C/G/T/N)
-//#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
-//pub enum SnpType {
-//    SnpA = 0,
-//    SnpC = 1,
-//    SnpG = 2,
-//    SnpT = 3,
-//    SnpN = 4,
-//}
-//
-//impl SnpType {
-//    /// SnpType::from('A') == Ok(SnpType::SnpA)
-//    pub fn from(c: char) -> Result<SnpType, ()> {
-//        match c {
-//            'A' => Ok(SnpType::SnpA),
-//            'C' => Ok(SnpType::SnpC),
-//            'G' => Ok(SnpType::SnpG),
-//            'T' => Ok(SnpType::SnpT),
-//            'N' => Ok(SnpType::SnpN),
-//            _   => Err(()),
-//        }
-//    }
-//
-//    /// SnpType::from_usize(0) == Ok(SnpType::SnpA)
-//    pub fn from_usize(i: usize) -> Result<SnpType, ()> {
-//        match i {
-//            0 => Ok(SnpType::SnpA),
-//            1 => Ok(SnpType::SnpC),
-//            2 => Ok(SnpType::SnpG),
-//            3 => Ok(SnpType::SnpT),
-//            4 => Ok(SnpType::SnpN),
-//            _   => Err(()),
-//        }
-//    }
-//}
-//
-//impl fmt::Display for SnpType {
-//    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//        let s: String = match self {
-//            SnpType::SnpA => "A".to_string(),
-//            SnpType::SnpC => "C".to_string(),
-//            SnpType::SnpG => "G".to_string(),
-//            SnpType::SnpT => "T".to_string(),
-//            SnpType::SnpN => "N".to_string(),
-//        };
-//
-//        write!(f, "{}", s)
-//    }
-//}
-//
-//impl Into<usize> for SnpType {
-//    fn into(self) -> usize {
-//        self as usize
-//    }
-//}
-
 /// Location and type of SNP
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
 pub struct Snp {
     /// chromosome
     chr: String,
     /// 0-based location
-    pos: u64,
+    pos: u32,
     /// SNP type
     typ: Base,
 }
 
 impl Snp {
-    pub fn new(chr: String, pos: u64, typ: char) -> Snp {
+    pub fn new(chr: String, pos: u32, typ: char) -> Snp {
         Snp { chr: chr, pos: pos, typ: Base::from(typ).unwrap() }
     }
 
@@ -84,7 +28,7 @@ impl Snp {
         &self.chr
     }
 
-    pub fn get_pos(&self) -> &u64 {
+    pub fn get_pos(&self) -> &u32 {
         &self.pos
     }
 }
@@ -152,17 +96,17 @@ pub struct Cpg {
     /// chromosome
     chr: String,
     /// 0-based location
-    pos: u64,
+    pos: u32,
     /// CpG type
     typ: CpgType,
 }
 
 impl Cpg {
-    pub fn new(chr: String, pos: u64, typ: char) -> Cpg {
+    pub fn new(chr: String, pos: u32, typ: char) -> Cpg {
         Cpg { chr: chr, pos: pos, typ: CpgType::from(typ).unwrap() }
     }
 
-    pub fn get_pos(&self) -> &u64 {
+    pub fn get_pos(&self) -> &u32 {
         &self.pos
     }
 }

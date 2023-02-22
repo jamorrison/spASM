@@ -83,11 +83,11 @@ pub struct PValMetadata {
     /// CpG2
     cpg2: CpgType,
     /// Contingency table
-    mat: (i64, i64, i64, i64),
+    mat: (u32, u32, u32, u32),
 }
 
 impl PValMetadata {
-    pub fn new(s1: Base, s2: Base, c1: CpgType, c2: CpgType, m: (i64, i64, i64, i64)) -> PValMetadata {
+    pub fn new(s1: Base, s2: Base, c1: CpgType, c2: CpgType, m: (u32, u32, u32, u32)) -> PValMetadata {
         PValMetadata { snp1: s1, snp2: s2, cpg1: c1, cpg2: c2, mat: m }
     }
 }
@@ -98,9 +98,9 @@ pub struct SnpCpgData {
     /// Chromosome
     chr: String,
     /// SNP location (0-based)
-    snp_pos: u64,
+    snp_pos: u32,
     /// CpG location (0-based)
-    cpg_pos: u64,
+    cpg_pos: u32,
     /// p-value
     p: f64,
     /// Metadata on the p-value
@@ -108,7 +108,7 @@ pub struct SnpCpgData {
 }
 
 impl SnpCpgData {
-    pub fn new(chr: String, s_pos: u64, c_pos: u64, p: f64, pdata: PValMetadata) -> SnpCpgData {
+    pub fn new(chr: String, s_pos: u32, c_pos: u32, p: f64, pdata: PValMetadata) -> SnpCpgData {
         SnpCpgData { chr: chr, snp_pos: s_pos, cpg_pos: c_pos, p: p, pdata: pdata }
     }
 
@@ -216,15 +216,15 @@ impl PartialOrd for SnpCpgData {
     }
 }
 
-pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Option<(f64, PValMetadata)> {
+pub fn calculate_p_values(fm: &Vec<u32>, nrow: usize, ncol: usize) -> Option<(f64, PValMetadata)> {
     if nrow < 2 || ncol < 2 {
         eprintln!("nrow ({}) or ncol ({}) not large enough for Fisher's exact test", nrow, ncol);
         quit::with_code(1);
     }
 
     // Find row and column sums
-    let rs: Vec<i64> = row_sums(fm, nrow, ncol);
-    let cs: Vec<i64> = col_sums(fm, nrow, ncol);
+    let rs: Vec<u32> = row_sums(fm, nrow, ncol);
+    let cs: Vec<u32> = col_sums(fm, nrow, ncol);
 
     // Find top two values in rows and columns
     let (row_one, row_two) = top_two(&rs, nrow);
@@ -232,10 +232,10 @@ pub fn calculate_p_values(fm: &Vec<i64>, nrow: usize, ncol: usize) -> Option<(f6
 
     if rs[row_one] > 0 && rs[row_two] > 0 && cs[col_one] > 0 && cs[col_two] > 0 {
         let p_value = fishers_exact(
-            fm[N_METH_STATES*row_one+col_one],
-            fm[N_METH_STATES*row_one+col_two],
-            fm[N_METH_STATES*row_two+col_one],
-            fm[N_METH_STATES*row_two+col_two]
+            fm[N_METH_STATES*row_one+col_one] as i64,
+            fm[N_METH_STATES*row_one+col_two] as i64,
+            fm[N_METH_STATES*row_two+col_one] as i64,
+            fm[N_METH_STATES*row_two+col_two] as i64
         );
 
         return Some(

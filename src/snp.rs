@@ -13,9 +13,9 @@ use crate::records::Record;
 
 /// count the number of reads with a given base at each snp location
 pub fn snp_support(r: &Record, support: &mut HashMap::<String, Vec<u16>>) {
-    let mut pos: u64;
+    let mut pos: u32;
     for (i, c) in r.get_snp().chars().enumerate() {
-        pos = r.get_start() + i as u64;
+        pos = r.get_start() + i as u32;
         match c {
             'A' | 'C' | 'G' | 'T' | 'R' | 'Y' | 'N' => {
                 let name = format!("{}:{}-{}", r.get_chr(), pos, pos);
@@ -42,8 +42,8 @@ pub fn snp_support(r: &Record, support: &mut HashMap::<String, Vec<u16>>) {
 
 /// find if ambiguous bases (R/Y) can be redistributed to their respective bases
 ///     (Y -> C/T, R -> G/A)
-pub fn redistribute_ambiguous_calls(support: &HashMap<String, Vec<u16>>, ref_fn: &PathBuf) -> HashMap::<String, Vec<Option<char>>> {
-    let mut out: HashMap::<String, Vec<Option<char>>> = HashMap::new();
+pub fn redistribute_ambiguous_calls(support: &HashMap<String, Vec<u16>>, ref_fn: &PathBuf) -> HashMap::<String, [Option<char>; 2]> {
+    let mut out: HashMap::<String, [Option<char>; 2]> = HashMap::new();
 
     // Open reference
     let genome = ref_genome::open_ref(ref_fn);
@@ -56,7 +56,7 @@ pub fn redistribute_ambiguous_calls(support: &HashMap<String, Vec<u16>>, ref_fn:
         //     None       -> do not change base
         //     Some(char) -> change ambiguous bases to char
         let name = format!("{}:{}", chr, start);
-        out.insert(name.clone(), vec![None; 2]);
+        out.insert(name.clone(), [None; 2]);
 
         // reference base, quit nicely if location can't be found
         let rb = match ref_genome::get_base(&genome, &chr, start as usize) {
