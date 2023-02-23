@@ -10,7 +10,7 @@ pub const N_METH_STATES: usize = 2;
 pub const N_BASES: usize = 7;
 
 /// Number of methylation states available (M/U)
-pub const N_BASES: usize = 2;
+//pub const N_METHS: usize = 2;
 
 /// Base support
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
