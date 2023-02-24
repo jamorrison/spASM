@@ -56,7 +56,7 @@ pub fn decode_rle(s: &str) -> String {
 }
 
 /// find sum of rows in flattened matrix
-pub fn row_sums(fm: &Vec<u32>, nrow: usize, ncol: usize) -> Vec<u32> {
+pub fn row_sums(fm: &[u32], nrow: usize, ncol: usize) -> Vec<u32> {
     let mut sums: Vec<u32> = vec![0; nrow];
 
     for r in 0..nrow {
@@ -69,7 +69,7 @@ pub fn row_sums(fm: &Vec<u32>, nrow: usize, ncol: usize) -> Vec<u32> {
 }
 
 /// find sum of columns in flattened matrix
-pub fn col_sums(fm: &Vec<u32>, nrow: usize, ncol: usize) -> Vec<u32> {
+pub fn col_sums(fm: &[u32], nrow: usize, ncol: usize) -> Vec<u32> {
     let mut sums: Vec<u32> = vec![0; ncol];
 
     for r in 0..nrow {

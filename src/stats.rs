@@ -5,6 +5,8 @@ use std::{
     collections::HashMap,
 };
 
+use thiserror::Error;
+
 use crate::utils::{
     row_sums,
     col_sums,
@@ -217,7 +219,7 @@ impl PartialOrd for SnpCpgData {
     }
 }
 
-pub fn calculate_p_values(fm: &Vec<u32>, nrow: usize, ncol: usize) -> Option<(f64, PValMetadata)> {
+pub fn calculate_p_values(fm: &[u32], nrow: usize, ncol: usize) -> Option<(f64, PValMetadata)> {
     if nrow < 2 || ncol < 2 {
         eprintln!("nrow ({}) or ncol ({}) not large enough for Fisher's exact test", nrow, ncol);
         quit::with_code(1);
@@ -267,6 +269,15 @@ enum FdrType {
     No,
 }
 
+/// FdrType errors
+#[derive(Error, Debug, PartialEq)]
+enum FdrTypeError {
+    /// unknown type
+    #[error("unknown FDR type. try spasm --help for options")]
+    UnknownType,
+}
+
+
 impl fmt::Display for FdrType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s: String = match self {
@@ -283,31 +294,24 @@ impl fmt::Display for FdrType {
 }
 
 impl FromStr for FdrType {
-    type Err = std::string::ParseError;
+    type Err = FdrTypeError;
 
     fn from_str(fdr: &str) -> Result<Self, Self::Err> {
-        let tmp = fdr.to_uppercase();
-        let out: FdrType = if tmp == "BH".to_string()  {
-            FdrType::Bh
-        } else if tmp == "HOLM" {
-            FdrType::Holm
-        } else if tmp == "HOCHBERG" {
-            FdrType::Hochberg
-        } else if tmp == "BONFERRONI" {
-            FdrType::Bonferroni
-        } else if tmp == "BY" {
-            FdrType::By
-        } else if tmp == "NO" {
-            FdrType::No
-        } else {
-            FdrType::No
+        let out: FdrType = match fdr {
+            "BH" => FdrType::Bh,
+            "HOLM" => FdrType::Holm,
+            "HOCHBERG" => FdrType::Hochberg,
+            "BONFERRONI" => FdrType::Bonferroni,
+            "BY" => FdrType::By,
+            "NO" => FdrType::No,
+            _ => return Err(FdrTypeError::UnknownType),
         };
 
         Ok(out)
     }
 }
 
-/// Perform Bonferonni p-value adjustment
+/// Perform Bonferroni p-value adjustment
 fn bonferroni(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
     let mut out: Vec<SnpCpgData> = Vec::new();
     for v in p {
@@ -451,7 +455,13 @@ pub fn false_discovery_correction(p: &Vec<SnpCpgData>, typ: &str, n: usize) -> V
     }
 
     // Get FDR type
-    let t = FdrType::from_str(typ).unwrap();
+    let t = match FdrType::from_str(typ) {
+        Ok(f) => f,
+        Err(err) => {
+            eprintln!("{}", err);
+            quit::with_code(1);
+        },
+    };
 
     let out: Vec<SnpCpgData>;
     match t {

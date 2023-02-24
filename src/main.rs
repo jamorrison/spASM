@@ -297,14 +297,14 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
 }
 
 fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
-    let length = constants::N_METH_STATES * constants::N_BASES;
+    const LENGTH: usize = constants::N_METH_STATES * constants::N_BASES;
 
     let mut chrm: Option<u32> = None;
     let mut snp_prev: u32 = u32::MAX;
     let mut cpg_prev: u32 = u32::MAX;
     let mut snp_curr: u32 = u32::MAX;
     let mut cpg_curr: u32 = u32::MAX;
-    let mut flat_matrix: Vec<u32> = vec![0; length];
+    let mut flat_matrix = [0; LENGTH];
     let mut index: usize;
 
     let mut out: Vec<SnpCpgData> = Vec::new();
@@ -333,7 +333,7 @@ fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
             cpg_prev = cpg_curr;
             snp_prev = snp_curr;
 
-            flat_matrix = vec![0; length];
+            flat_matrix = [0; LENGTH];
         }
 
         index = l.get_index();
