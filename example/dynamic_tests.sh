@@ -34,9 +34,9 @@ echo -e "Testing a specific region can be chosen (chromosome and region)"
 echo -e "\t../target/release/spasm -r chr1:0-100 example.fa.gz test.epibed.gz"
 ../target/release/spasm --region chr1:0-100 example.fa.gz test.epibed.gz
 
-echo -e "Testing user can combine reads into individual DNA fragments"
-echo -e "\t../target/release/spasm --fragment example.fa.gz test.epibed.gz"
-../target/release/spasm --merge-mates example.fa.gz test.epibed.gz
+echo -e "Testing user skip combining reads into individual DNA fragments"
+echo -e "\t../target/release/spasm --no-mate-merging example.fa.gz test.epibed.gz"
+../target/release/spasm --no-mate-merging example.fa.gz test.epibed.gz
 
 echo -e "Testing user can output biscuit ASM file format"
 echo -e "\t../target/release/spasm --biscuit example.fa.gz test.epibed.gz"
