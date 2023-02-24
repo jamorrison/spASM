@@ -81,7 +81,7 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
 
     Record::new(
         r1.get_chr().to_string(),
-        0,
+        *r1.get_chr_id(),
         new_start,
         new_end,
         r1.get_name().to_string(),
@@ -127,7 +127,7 @@ fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
 
     Record::new(
         r1.get_chr().to_string(),
-        0,
+        *r1.get_chr_id(),
         new_start,
         new_end,
         r1.get_name().to_string(),
