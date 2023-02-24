@@ -487,62 +487,15 @@ mod tests {
         (x - y).abs() < constants::CLOSE_TO_ZERO
     }
 
-    //#[test]
-    //fn test_ln_gamma() {
-    //    let x: f64 = ln_gamma(3);
-
-    //    assert!(float_equality(x, 0.693147181));
-    //}
-
-    //#[test]
-    //fn test_ln_binomial() {
-    //    let x: f64 = ln_binomial(3, 2);
-
-    //    assert!(float_equality(x, 1.098612289));
-    //}
-
-    //#[test]
-    //fn test_hypergeometric() {
-    //    let x: f64 = hypergeometric(2, 3, 4, 6);
-
-    //    assert!(float_equality(x, 0.6));
-    //}
-
-    //#[test]
-    //fn test_fisher_exact_left() {
-    //    let (l, _, _) = fisher_exact(2, 1, 2, 1);
-
-    //    assert!(float_equality(l, 0.8));
-    //}
-
-    //#[test]
-    //fn test_fisher_exact_right() {
-    //    let (_, r, _) = fisher_exact(2, 1, 2, 1);
-
-    //    assert!(float_equality(r, 0.8));
-    //}
-
-    //#[test]
-    //fn test_fisher_exact_two() {
-    //    let (_, _, t) = fisher_exact(2, 1, 2, 1);
-
-    //    assert!(float_equality(t, 1.0));
-    //}
-
     #[test]
-    fn test_other_implementation_1() {
-        let t = other_implementation(6, 2, 0, 1);
-        println!("{}", t-0.3333);
-
-        assert!(float_equality(t, 0.3333));
+    fn test_fishers_exact_sig() {
+        let test = fishers_exact(15, 0, 0, 15);
+        assert!(float_equality(test, 1.289e-8));
     }
 
     #[test]
-    fn test_other_implementation_2() {
-        let t = other_implementation(12345, 67890, 54321, 9876);
-        println!("{:.50}", t);
-
-        assert!(float_equality(t, 0.02));
-        //assert!(float_equality(t, 0.00000000000000002));
+    fn test_fishers_exact_not_sig() {
+        let test = fishers_exact(15, 0, 15, 0);
+        assert!(float_equality(test, 1.0));
     }
 }
