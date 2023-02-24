@@ -95,7 +95,7 @@ struct Args {
     verbose: usize,
 }
 
-fn process_file(fname: &PathBuf, genome: &PathBuf, chr: &str, start: &u32, end: &u32, verbose: &usize) -> Result<(HashMap::<String, Vec<Record>>, HashMap::<String, [Option<char>; 2]>)> {
+fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32>, chr: &str, start: &u32, end: &u32, verbose: &usize) -> Result<(HashMap::<String, Vec<Record>>, HashMap::<String, [Option<char>; 2]>)> {
     let mut line    = String::new();
     let mut records = HashMap::<String, Vec<Record>>::new();
     let mut support = HashMap::<String, Vec<u16>>::new();
@@ -403,11 +403,14 @@ fn main() {
     // TODO: Add an option to read a BED file of desired locations
     let args = Args::parse();
 
+    // Lookup tables for chromosome names and IDs
+    let (k_chr, _k_int) = ref_genome::chromosome_lookup_tables(&args.genome);
+
     // Chromosome, start, and end of region of interest
     let (r_chr, r_start, r_end) = utils::parse_region(&args.region);
 
     // Read epiBED and put into records for processing
-    let (file_records, redist) = process_file(&args.path, &args.genome, &r_chr, &r_start, &r_end, &args.verbose).expect("Error parsing file.");
+    let (file_records, redist) = process_file(&args.path, &args.genome, &k_chr, &r_chr, &r_start, &r_end, &args.verbose).expect("Error parsing file.");
 
     // Pull out matched SNP-CpG pairs from reads/fragments
     // default is to merge mates, so when --no-mate-merging is given, the value is set to true
