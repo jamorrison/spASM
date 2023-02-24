@@ -12,7 +12,7 @@ use crate::constants::{
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
 pub struct Snp {
     /// chromosome
-    chr: String,
+    chr: u32,
     /// 0-based location
     pos: u32,
     /// SNP type
@@ -20,11 +20,11 @@ pub struct Snp {
 }
 
 impl Snp {
-    pub fn new(chr: String, pos: u32, typ: char) -> Snp {
+    pub fn new(chr: u32, pos: u32, typ: char) -> Snp {
         Snp { chr: chr, pos: pos, typ: Base::from(typ).unwrap() }
     }
 
-    pub fn get_chr(&self) -> &String {
+    pub fn get_chr(&self) -> &u32 {
         &self.chr
     }
 
@@ -94,7 +94,7 @@ impl Into<usize> for CpgType {
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
 pub struct Cpg {
     /// chromosome
-    chr: String,
+    chr: u32,
     /// 0-based location
     pos: u32,
     /// CpG type
@@ -102,7 +102,7 @@ pub struct Cpg {
 }
 
 impl Cpg {
-    pub fn new(chr: String, pos: u32, typ: char) -> Cpg {
+    pub fn new(chr: u32, pos: u32, typ: char) -> Cpg {
         Cpg { chr: chr, pos: pos, typ: CpgType::from(typ).unwrap() }
     }
 

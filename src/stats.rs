@@ -2,6 +2,7 @@ use std::{
     str::FromStr,
     fmt,
     cmp::Ordering,
+    collections::HashMap,
 };
 
 use crate::utils::{
@@ -96,7 +97,7 @@ impl PValMetadata {
 #[derive(Debug, PartialEq, Clone)]
 pub struct SnpCpgData {
     /// Chromosome
-    chr: String,
+    chr: u32,
     /// SNP location (0-based)
     snp_pos: u32,
     /// CpG location (0-based)
@@ -108,7 +109,7 @@ pub struct SnpCpgData {
 }
 
 impl SnpCpgData {
-    pub fn new(chr: String, s_pos: u32, c_pos: u32, p: f64, pdata: PValMetadata) -> SnpCpgData {
+    pub fn new(chr: u32, s_pos: u32, c_pos: u32, p: f64, pdata: PValMetadata) -> SnpCpgData {
         SnpCpgData { chr: chr, snp_pos: s_pos, cpg_pos: c_pos, p: p, pdata: pdata }
     }
 
@@ -127,7 +128,7 @@ impl SnpCpgData {
     /// Write in BEDPE format
     /// SNP chr, SNP start, SNP end, CpG chrom, CpG start, CpG end, name, p-value, SNP strand, CpG
     /// strand, SNP1, SNP2, CpG1, CpG2, m11, m12, m21, m22
-    pub fn to_bedpe(&self, cutoff: f64) -> String {
+    pub fn to_bedpe(&self, k_int: &HashMap::<u32, String>, cutoff: f64) -> String {
         let name: &str = if self.p < cutoff {
             "candidate"
         } else {
@@ -136,10 +137,10 @@ impl SnpCpgData {
 
         format!(
             "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:.10e}\t.\t.\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
-            self.chr,
+            k_int.get(&self.chr).unwrap(),
             self.snp_pos,
             self.snp_pos+1,
-            self.chr,
+            k_int.get(&self.chr).unwrap(),
             self.cpg_pos,
             self.cpg_pos+2,
             name,
@@ -157,10 +158,10 @@ impl SnpCpgData {
 
     /// Write in BISCUIT ASM format
     /// chr, snp position, cpg position, SNP1, SNP2, CPG1, CPG2, m11, m12, m21, m22, p-value
-    pub fn to_biscuit_asm(&self) -> String {
+    pub fn to_biscuit_asm(&self, k_int: &HashMap::<u32, String>) -> String {
         format!(
             "{}\t{}\t{}\t{}/{}\t{}/{}\t{}\t{}\t{}\t{}\t{:.10e}\t.\n",
-            self.chr,
+            k_int.get(&self.chr).unwrap(),
             self.snp_pos,
             self.cpg_pos,
             self.pdata.snp1,
@@ -316,7 +317,7 @@ fn bonferroni(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
             v.p * n as f64
         };
 
-        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: tmp, pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: tmp, pdata: v.pdata } );
     }
 
     out
@@ -343,7 +344,7 @@ fn benjamini_hochberg(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
             curr_min = tmp;
         }
 
-        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
     }
 
     resort(&out, &original_order)
@@ -383,7 +384,7 @@ fn benjamini_yekutieli(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
             curr_min = tmp;
         }
 
-        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
     }
 
     resort(&out, &original_order)
@@ -410,7 +411,7 @@ fn hochberg(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
             curr_min = tmp;
         }
 
-        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
     }
 
     resort(&out, &original_order)
@@ -437,7 +438,7 @@ fn holm(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
             curr_max = tmp;
         }
 
-        out.push( SnpCpgData { chr: v.chr.clone(), snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_max.min(1.0), pdata: v.pdata } );
+        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_max.min(1.0), pdata: v.pdata } );
     }
 
     resort(&out, &original_order)

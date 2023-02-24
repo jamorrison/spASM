@@ -94,7 +94,7 @@ struct Args {
     verbose: usize,
 }
 
-fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32>, chr: &str, start: &u32, end: &u32, verbose: &usize) -> Result<(HashMap::<String, Vec<Record>>, HashMap::<String, [Option<char>; 2]>)> {
+fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32>, k_int: &HashMap::<u32, String>, chr: &str, start: &u32, end: &u32, verbose: &usize) -> Result<(HashMap::<String, Vec<Record>>, HashMap::<String, [Option<char>; 2]>)> {
     let mut line    = String::new();
     let mut records = HashMap::<String, Vec<Record>>::new();
     let mut support = HashMap::<String, Vec<u16>>::new();
@@ -132,7 +132,7 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
                         Err(err) => return Err(anyhow::Error::from(err)),
                     };
 
-                    snp::snp_support(&r, &mut support);
+                    snp::snp_support(&r, &mut support, k_int);
 
                     let name: String = r.get_name().clone();
                     if !records.contains_key(&name) {
@@ -179,7 +179,7 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
                 Err(err) => return Err(anyhow::Error::from(err)),
             };
 
-            snp::snp_support(&r, &mut support);
+            snp::snp_support(&r, &mut support, k_int);
 
             let name: String = r.get_name().clone();
             if !records.contains_key(&name) {
@@ -250,7 +250,7 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
                 match cg {
                     'M' | 'U' => {
                         let cg_pos = if *v.get_bs_strand() { pos } else { pos-1 };
-                        cpgs.push(Cpg::new(v.get_chr().clone(), cg_pos, cg));
+                        cpgs.push(Cpg::new(*v.get_chr_id(), cg_pos, cg));
                     },
                     _ => {}
                 }
@@ -258,7 +258,7 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
                 match vr {
                     'A' | 'C' | 'G' | 'T' | 'R' | 'Y' | 'N' => {
                         let mut s: char = vr;
-                        match redist.get(&format!("{}:{}", v.get_chr(), pos)) {
+                        match redist.get(&format!("{}:{}", v.get_chr_id(), pos)) {
                             Some(vec) => {
                                 if vr == 'R' || vr == 'Y' {
                                     match vec[Base::from(vr).unwrap() as usize] {
@@ -270,7 +270,7 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
                             None => {},
                         };
 
-                        snps.push(Snp::new(v.get_chr().clone(), pos, s));
+                        snps.push(Snp::new(*v.get_chr_id(), pos, s));
                     },
                     _ => {
                         continue;
@@ -299,7 +299,7 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
 fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
     let length = constants::N_METH_STATES * constants::N_BASES;
 
-    let mut chrm = String::from("");
+    let mut chrm: Option<u32> = None;
     let mut snp_prev: u32 = u32::MAX;
     let mut cpg_prev: u32 = u32::MAX;
     let mut snp_curr: u32 = u32::MAX;
@@ -312,14 +312,14 @@ fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
         snp_curr = *l.get_snp().get_pos();
         cpg_curr = *l.get_cpg().get_pos();
 
-        if chrm == "" || cpg_curr != cpg_prev || snp_curr != snp_prev || chrm != *l.get_snp().get_chr() {
-            if chrm != "" {
+        if chrm.is_none() || cpg_curr != cpg_prev || snp_curr != snp_prev || chrm != Some(*l.get_snp().get_chr()) {
+            if !chrm.is_none() {
                 let p_vals = stats::calculate_p_values(&flat_matrix, constants::N_BASES, constants::N_METH_STATES);
 
                 if !p_vals.is_none() {
                     out.push(
                         SnpCpgData::new(
-                            chrm.clone(),
+                            chrm.unwrap(),
                             snp_prev,
                             cpg_prev,
                             p_vals.unwrap().0,
@@ -329,7 +329,7 @@ fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
                 }
             }
 
-            chrm = l.get_snp().get_chr().clone();
+            chrm = Some(*l.get_snp().get_chr());
             cpg_prev = cpg_curr;
             snp_prev = snp_curr;
 
@@ -341,13 +341,13 @@ fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
     }
 
     // Catch remaining values
-    if chrm != "" {
+    if !chrm.is_none() {
         let p_vals = stats::calculate_p_values(&flat_matrix, constants::N_BASES, constants::N_METH_STATES);
 
         if !p_vals.is_none() {
             out.push(
                 SnpCpgData::new(
-                    chrm.clone(),
+                    chrm.unwrap(),
                     snp_curr,
                     cpg_curr,
                     p_vals.unwrap().0,
@@ -375,13 +375,13 @@ fn setup_output(fname: &Option<String>) -> bgzf::Writer {
     }
 }
 
-fn write_data(fh: &mut bgzf::Writer, data: &Vec<SnpCpgData>, is_biscuit: bool, cutoff: f64, candidate: bool, no_ambiguous: bool) -> () {
+fn write_data(fh: &mut bgzf::Writer, data: &Vec<SnpCpgData>, k_int: &HashMap::<u32, String>, is_biscuit: bool, cutoff: f64, candidate: bool, no_ambiguous: bool) -> () {
     for p in data.iter() {
         // Format string as requested
         let tmp: String = if is_biscuit {
-            p.to_biscuit_asm()
+            p.to_biscuit_asm(k_int)
         } else {
-            p.to_bedpe(cutoff)
+            p.to_bedpe(k_int, cutoff)
         };
 
         let print_val: bool = if no_ambiguous {
@@ -406,14 +406,14 @@ fn main() {
     let args = Args::parse();
 
     // Lookup tables for chromosome names and IDs
-    let (k_chr, _k_int) = ref_genome::chromosome_lookup_tables(&args.genome);
+    let (k_chr, k_int) = ref_genome::chromosome_lookup_tables(&args.genome);
 
     // Chromosome, start, and end of region of interest
     let (r_chr, r_start, r_end) = utils::parse_region(&args.region);
     let r_chr_id = k_chr.get(&r_chr);
 
     // Read epiBED and put into records for processing
-    let (file_records, redist) = match process_file(&args.path, &args.genome, &k_chr, &r_chr, &r_start, &r_end, &args.verbose) {
+    let (file_records, redist) = match process_file(&args.path, &args.genome, &k_chr, &k_int, &r_chr, &r_start, &r_end, &args.verbose) {
         Ok((f, r)) => (f, r),
         Err(err) => {
             eprintln!("Error parsing file: {}", err);
@@ -438,5 +438,5 @@ fn main() {
     // Write data to output
     let mut writer = setup_output(&args.output);
 
-    write_data(&mut writer, &p_corrected, args.biscuit, args.pcutoff, args.candidate, args.no_ambiguous);
+    write_data(&mut writer, &p_corrected, &k_int, args.biscuit, args.pcutoff, args.candidate, args.no_ambiguous);
 }

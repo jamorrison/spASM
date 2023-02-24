@@ -12,13 +12,13 @@ use crate::constants::{
 use crate::records::Record;
 
 /// count the number of reads with a given base at each snp location
-pub fn snp_support(r: &Record, support: &mut HashMap::<String, Vec<u16>>) {
+pub fn snp_support(r: &Record, support: &mut HashMap::<String, Vec<u16>>, k_int: &HashMap::<u32, String>) {
     let mut pos: u32;
     for (i, c) in r.get_snp().chars().enumerate() {
         pos = r.get_start() + i as u32;
         match c {
             'A' | 'C' | 'G' | 'T' | 'R' | 'Y' | 'N' => {
-                let name = format!("{}:{}-{}", r.get_chr(), pos, pos);
+                let name = format!("{}:{}-{}", k_int.get(r.get_chr_id()).unwrap(), pos, pos);
                 match support.get_mut(&name) {
                     Some(v) => {
                         // snp already in hashmap, so just increment

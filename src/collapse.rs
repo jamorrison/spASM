@@ -9,7 +9,7 @@ pub fn collapse_to_fragment(reads: &Vec<Record>) -> Vec<Record> {
     let     r2: Record = reads[idx2].clone();
 
     // If reads are on separate chromosomes, then return without processing
-    if r1.get_chr() != r2.get_chr() {
+    if r1.get_chr_id() != r2.get_chr_id() {
         return Vec::from([r1, r2]);
     }
 
@@ -80,7 +80,6 @@ fn collapse_dovetail(r1: Record, r2: Record) -> Record {
     }
 
     Record::new(
-        r1.get_chr().to_string(),
         *r1.get_chr_id(),
         new_start,
         new_end,
@@ -126,7 +125,6 @@ fn collapse_canonical_proper_pair(r1: Record, r2: Record) -> Record {
     }
 
     Record::new(
-        r1.get_chr().to_string(),
         *r1.get_chr_id(),
         new_start,
         new_end,

@@ -24,8 +24,6 @@ pub enum RecordParseError {
 /// Store the values from each line in the epiBED
 #[derive(Debug, PartialEq, Clone)]
 pub struct Record {
-    /// chromosome
-    chr: String,
     /// chromosome id
     chr_id: u32,
     /// 0-based start position
@@ -45,9 +43,8 @@ pub struct Record {
 }
 
 impl Record {
-    pub fn new(chr: String, chr_id: u32, start: u32, end: u32, name: String, rn: u8, bss: bool, cpg: String, snp: String) -> Record {
+    pub fn new(chr_id: u32, start: u32, end: u32, name: String, rn: u8, bss: bool, cpg: String, snp: String) -> Record {
         Record {
-            chr: chr,
             chr_id: chr_id,
             start: start,
             end: end,
@@ -71,7 +68,6 @@ impl Record {
 
         let tmp: Vec<char> = vec[5].chars().collect();
 
-        let chr: String     = String::from(vec[0]);
         let chr_id: u32     = match ids.get(&String::from(vec[0])) {
             Some(id) => *id,
             None => {
@@ -88,7 +84,6 @@ impl Record {
 
         Ok (
             Record {
-                chr: chr,
                 chr_id: chr_id,
                 start: start,
                 end: end,
@@ -99,10 +94,6 @@ impl Record {
                 snp: snp,
             }
         )
-    }
-
-    pub fn get_chr(&self) -> &String {
-        &self.chr
     }
 
     pub fn get_chr_id(&self) -> &u32 {
@@ -145,8 +136,7 @@ impl Record {
 impl fmt::Display for Record {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s: String = format!(
-            "Chromosome: {}\nChromosome ID: {}\nStart: {}\nEnd: {}\nName: {}\nRead Number: {}\nBS Strand: {}\nCpG: {}\nSNP: {}",
-            self.chr,
+            "Chromosome ID: {}\nStart: {}\nEnd: {}\nName: {}\nRead Number: {}\nBS Strand: {}\nCpG: {}\nSNP: {}",
             self.chr_id,
             self.start,
             self.end,
