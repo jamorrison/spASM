@@ -206,7 +206,7 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
 
 /// Loop over records, collapse mates if requested, then loop over each vector entry to pull out
 /// CpGs and SNPs to form input to ASM calculation
-fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, [Option<char>; 2]>, merge: &bool, chr: &String, start: &u32, end: &u32, verbose: &usize) -> Vec<Pair> {
+fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, [Option<char>; 2]>, merge: &bool, chr_id: &Option<&u32>, start: &u32, end: &u32, verbose: &usize) -> Vec<Pair> {
     let mut out: Vec<Pair> = Vec::new();
 
     for val in fr.values() {
@@ -243,7 +243,7 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
 
                 i += 1;
 
-                if (chr != "all") && (v.get_chr() != chr || pos < *start || pos >= *end) {
+                if !chr_id.is_none() && (&Some(v.get_chr_id()) != chr_id || pos < *start || pos >= *end) {
                     continue;
                 }
 
@@ -410,6 +410,7 @@ fn main() {
 
     // Chromosome, start, and end of region of interest
     let (r_chr, r_start, r_end) = utils::parse_region(&args.region);
+    let r_chr_id = k_chr.get(&r_chr);
 
     // Read epiBED and put into records for processing
     let (file_records, redist) = match process_file(&args.path, &args.genome, &k_chr, &r_chr, &r_start, &r_end, &args.verbose) {
@@ -424,7 +425,7 @@ fn main() {
     // default is to merge mates, so when --no-mate-merging is given, the value is set to true
     // therefore, we want to take the opposite of what no_mate_merging to get the code to do what
     // we want it to
-    let locations = create_snp_cpg_pairs(file_records, redist, &(!args.no_mate_merging), &r_chr, &r_start, &r_end, &args.verbose);
+    let locations = create_snp_cpg_pairs(file_records, redist, &(!args.no_mate_merging), &r_chr_id, &r_start, &r_end, &args.verbose);
 
     // Find p-values from inputs
     let mut p_vals = find_p_values(locations);
