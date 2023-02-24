@@ -1,6 +1,5 @@
 use std::{
     io::{BufRead, BufReader, Write},
-    str::FromStr,
     collections::HashMap,
     path::PathBuf,
 };
@@ -128,13 +127,9 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
                     line.truncate(len);
 
                     // Parse record
-                    let r = match Record::from_str(&line) {
+                    let r = match Record::create(&line, &k_chr) {
                         Ok(rec) => rec,
-                        Err(_) => {
-                            eprintln!("Malformed record");
-                            eprintln!("spASM only works with BISCUIT v1.2+ epiBED files");
-                            quit::with_code(1);
-                        },
+                        Err(err) => return Err(anyhow::Error::from(err)),
                     };
 
                     snp::snp_support(&r, &mut support);
@@ -179,12 +174,9 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
             let rec = record.ok().unwrap();
             line = rec.iter().map(|b| *b as char).collect();
 
-            let r = match Record::from_str(&line) {
+            let r = match Record::create(&line, &k_chr) {
                 Ok(rec) => rec,
-                Err(_) => {
-                    eprintln!("Error found when reading record!");
-                    quit::with_code(1);
-                },
+                Err(err) => return Err(anyhow::Error::from(err)),
             };
 
             snp::snp_support(&r, &mut support);
@@ -420,7 +412,13 @@ fn main() {
     let (r_chr, r_start, r_end) = utils::parse_region(&args.region);
 
     // Read epiBED and put into records for processing
-    let (file_records, redist) = process_file(&args.path, &args.genome, &k_chr, &r_chr, &r_start, &r_end, &args.verbose).expect("Error parsing file.");
+    let (file_records, redist) = match process_file(&args.path, &args.genome, &k_chr, &r_chr, &r_start, &r_end, &args.verbose) {
+        Ok((f, r)) => (f, r),
+        Err(err) => {
+            eprintln!("Error parsing file: {}", err);
+            quit::with_code(1);
+        },
+    };
 
     // Pull out matched SNP-CpG pairs from reads/fragments
     // default is to merge mates, so when --no-mate-merging is given, the value is set to true
