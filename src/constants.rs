@@ -9,9 +9,6 @@ pub const N_METH_STATES: usize = 2;
 /// Number of SNPs available (A/T/C/G/N)
 pub const N_BASES: usize = 7;
 
-/// Number of methylation states available (M/U)
-//pub const N_METHS: usize = 2;
-
 /// Base support
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 pub enum Base {
