@@ -100,6 +100,7 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
     let mut records = HashMap::<String, Vec<Record>>::new();
     let mut support = HashMap::<String, Vec<u16>>::new();
 
+    let mut count: usize = 0;
     if chr == "all" {
         if *verbose >= 2 {
             eprintln!("NOTE: You requested that all reads be read. This may take a long time for large epiBEDs");
@@ -146,6 +147,8 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
                     }
 
                     line.clear();
+
+                    count += 1;
                 }
 
                 Err(err) => {
@@ -194,10 +197,17 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
             }
 
             line.clear();
+
+            count += 1;
         }
     }
 
     let dist_ambig = snp::redistribute_ambiguous_calls(&support, &genome);
+
+    if *verbose >= 2 {
+        eprintln!("NOTE: {} reads processed", count);
+        eprintln!("NOTE: {} unique read names processed", records.len());
+    }
 
     Ok((records, dist_ambig))
 }
