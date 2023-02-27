@@ -17,19 +17,13 @@ mod collapse;
 mod constants;
 use crate::constants::{
     Base,
+    CpgType,
 };
 mod ref_genome;
 mod snp;
 
 mod records;
 use crate::records::Record;
-
-mod pairs;
-use crate::pairs::{
-    Snp,
-    Cpg,
-    Pair,
-};
 
 mod stats;
 use crate::stats::{
@@ -206,8 +200,8 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
 
 /// Loop over records, collapse mates if requested, then loop over each vector entry to pull out
 /// CpGs and SNPs to form input to ASM calculation
-fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, [Option<char>; 2]>, merge: &bool, chr_id: &Option<&u32>, start: &u32, end: &u32, verbose: &usize) -> Vec<Pair> {
-    let mut out: Vec<Pair> = Vec::new();
+fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<String, [Option<char>; 2]>, merge: &bool, chr_id: &Option<&u32>, start: &u32, end: &u32, verbose: &usize) -> HashMap<(u32, u32, u32), [u32; constants::LENGTH]> {
+    let mut out: HashMap<(u32, u32, u32), [u32; constants::LENGTH]> = HashMap::new();
 
     for val in fr.values() {
         // Only want primary reads, but it's hard to tell if a read is primary or secondary without
@@ -228,13 +222,15 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
 
         let mut i: u32;
         let mut pos: u32;
-        let mut snps: Vec<Snp> = Vec::new();
-        let mut cpgs: Vec<Cpg> = Vec::new();
+        let mut chr: u32;
+        let mut snps: Vec<(u32, Base)> = Vec::new();
+        let mut cpgs: Vec<(u32, CpgType)> = Vec::new();
         for v in process {
             // Clear values for next read
             i = 0;
             snps.clear();
             cpgs.clear();
+            chr = *v.get_chr_id();
 
             // Loop over characters in CpG and variant RLE strings
             for it in v.get_cpg().chars().zip(v.get_snp().chars()) {
@@ -250,19 +246,19 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
                 match cg {
                     'M' | 'U' => {
                         let cg_pos = if *v.get_bs_strand() { pos } else { pos-1 };
-                        cpgs.push(Cpg::new(*v.get_chr_id(), cg_pos, cg));
+                        cpgs.push( (cg_pos, CpgType::from(cg).unwrap()) );
                     },
-                    _ => {}
+                    _ => {},
                 }
 
                 match vr {
                     'A' | 'C' | 'G' | 'T' | 'R' | 'Y' | 'N' => {
-                        let mut s: char = vr;
+                        let mut s: Base = Base::from(vr).unwrap();
                         match redist.get(&format!("{}:{}", v.get_chr_id(), pos)) {
                             Some(vec) => {
                                 if vr == 'R' || vr == 'Y' {
                                     match vec[Base::from(vr).unwrap() as usize] {
-                                        Some(c) => { s = c; },
+                                        Some(c) => { s = Base::from(c).unwrap(); },
                                         None => {},
                                     };
                                 }
@@ -270,11 +266,9 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
                             None => {},
                         };
 
-                        snps.push(Snp::new(*v.get_chr_id(), pos, s));
+                        snps.push( (pos, s) );
                     },
-                    _ => {
-                        continue;
-                    }
+                    _ => {},
                 }
             }
 
@@ -284,72 +278,30 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
 
             for s in &snps {
                 for c in &cpgs {
-                    out.push(Pair::new(s.clone(), c.clone()));
+                    let tmp = (chr, s.0, c.0);
+                    let idx = utils::get_index(s.1, c.1);
+
+                    out.entry(tmp).and_modify(|fm| fm[idx] += 1).or_insert_with(|| { let mut fm = [0; constants::LENGTH]; fm[idx] += 1; fm } );
                 }
             }
         }
     }
-
-    // Need the pairs to be sorted to correctly find ASM
-    out.sort();
 
     out
 }
 
-fn find_p_values(locs: Vec<Pair>) -> Vec<SnpCpgData> {
-    const LENGTH: usize = constants::N_METH_STATES * constants::N_BASES;
-
-    let mut chrm: Option<u32> = None;
-    let mut snp_prev: u32 = u32::MAX;
-    let mut cpg_prev: u32 = u32::MAX;
-    let mut snp_curr: u32 = u32::MAX;
-    let mut cpg_curr: u32 = u32::MAX;
-    let mut flat_matrix = [0; LENGTH];
-    let mut index: usize;
-
+fn find_p_values(locs: HashMap<(u32, u32, u32), [u32; constants::LENGTH]>) -> Vec<SnpCpgData> {
     let mut out: Vec<SnpCpgData> = Vec::new();
-    for l in locs {
-        snp_curr = *l.get_snp().get_pos();
-        cpg_curr = *l.get_cpg().get_pos();
 
-        if chrm.is_none() || cpg_curr != cpg_prev || snp_curr != snp_prev || chrm != Some(*l.get_snp().get_chr()) {
-            if !chrm.is_none() {
-                let p_vals = stats::calculate_p_values(&flat_matrix, constants::N_BASES, constants::N_METH_STATES);
-
-                if !p_vals.is_none() {
-                    out.push(
-                        SnpCpgData::new(
-                            chrm.unwrap(),
-                            snp_prev,
-                            cpg_prev,
-                            p_vals.unwrap().0,
-                            p_vals.unwrap().1
-                        )
-                    );
-                }
-            }
-
-            chrm = Some(*l.get_snp().get_chr());
-            cpg_prev = cpg_curr;
-            snp_prev = snp_curr;
-
-            flat_matrix = [0; LENGTH];
-        }
-
-        index = l.get_index();
-        flat_matrix[index] += 1;
-    }
-
-    // Catch remaining values
-    if !chrm.is_none() {
-        let p_vals = stats::calculate_p_values(&flat_matrix, constants::N_BASES, constants::N_METH_STATES);
+    for (k, v) in locs {
+        let p_vals = stats::calculate_p_values(&v, constants::N_BASES, constants::N_METH_STATES);
 
         if !p_vals.is_none() {
             out.push(
                 SnpCpgData::new(
-                    chrm.unwrap(),
-                    snp_curr,
-                    cpg_curr,
+                    k.0,
+                    k.1,
+                    k.2,
                     p_vals.unwrap().0,
                     p_vals.unwrap().1
                 )

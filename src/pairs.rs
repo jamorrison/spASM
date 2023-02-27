@@ -6,6 +6,7 @@ use std::{
 use crate::constants::{
     N_METH_STATES,
     Base,
+    CpgType,
 };
 
 /// Location and type of SNP
@@ -43,50 +44,6 @@ impl fmt::Display for Snp {
         );
 
         write!(f, "{}", s)
-    }
-}
-
-/// Methylation status
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
-pub enum CpgType {
-    NotMeth = 0,
-    Meth = 1,
-}
-
-impl CpgType {
-    /// CpgType::from('M') == Ok(CpgType::Meth)
-    pub fn from(c: char) -> Result<CpgType, ()> {
-        match c {
-            'U' => Ok(CpgType::NotMeth),
-            'M' => Ok(CpgType::Meth),
-            _   => Err(()),
-        }
-    }
-
-    /// CpgType::from_usize(1) == Ok(CpgType::Meth)
-    pub fn from_usize(i: usize) -> Result<CpgType, ()> {
-        match i {
-            0 => Ok(CpgType::NotMeth),
-            1 => Ok(CpgType::Meth),
-            _   => Err(()),
-        }
-    }
-}
-
-impl fmt::Display for CpgType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s: String = match self {
-            CpgType::NotMeth => "U".to_string(),
-            CpgType::Meth => "M".to_string(),
-        };
-
-        write!(f, "{}", s)
-    }
-}
-
-impl Into<usize> for CpgType {
-    fn into(self) -> usize {
-        self as usize
     }
 }
 

@@ -9,6 +9,9 @@ pub const N_METH_STATES: usize = 2;
 /// Number of SNPs available (A/T/C/G/N)
 pub const N_BASES: usize = 7;
 
+/// Flat matrix length for number of bases and methylation states
+pub const LENGTH: usize = N_METH_STATES * N_BASES;
+
 /// Base support
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 pub enum Base {
@@ -67,6 +70,50 @@ impl fmt::Display for Base {
 
 impl Into<usize> for Base {
     fn into(self) -> usize{
+        self as usize
+    }
+}
+
+/// Methylation status
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
+pub enum CpgType {
+    NotMeth = 0,
+    Meth = 1,
+}
+
+impl CpgType {
+    /// CpgType::from('M') == Ok(CpgType::Meth)
+    pub fn from(c: char) -> Result<CpgType, ()> {
+        match c {
+            'U' => Ok(CpgType::NotMeth),
+            'M' => Ok(CpgType::Meth),
+            _   => Err(()),
+        }
+    }
+
+    /// CpgType::from_usize(1) == Ok(CpgType::Meth)
+    pub fn from_usize(i: usize) -> Result<CpgType, ()> {
+        match i {
+            0 => Ok(CpgType::NotMeth),
+            1 => Ok(CpgType::Meth),
+            _   => Err(()),
+        }
+    }
+}
+
+impl fmt::Display for CpgType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s: String = match self {
+            CpgType::NotMeth => "U".to_string(),
+            CpgType::Meth => "M".to_string(),
+        };
+
+        write!(f, "{}", s)
+    }
+}
+
+impl Into<usize> for CpgType {
+    fn into(self) -> usize {
         self as usize
     }
 }

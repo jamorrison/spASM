@@ -1,3 +1,9 @@
+use crate::constants::{
+    Base,
+    CpgType,
+    N_METH_STATES,
+};
+
 /// Parse region string
 pub fn parse_region(r: &String) -> (String, u32, u32) {
     if r == "all" {
@@ -53,6 +59,11 @@ pub fn decode_rle(s: &str) -> String {
     }
 
     out
+}
+
+/// Calculate index based on Base and CpgType
+pub fn get_index(snp: Base, cpg: CpgType) -> usize {
+    N_METH_STATES*<Base as Into<usize>>::into(snp) + <CpgType as Into<usize>>::into(cpg)
 }
 
 /// find sum of rows in flattened matrix

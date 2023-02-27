@@ -17,9 +17,6 @@ use crate::constants::{
     CLOSE_TO_ZERO,
     N_METH_STATES,
     Base,
-};
-
-use crate::pairs::{
     CpgType,
 };
 
