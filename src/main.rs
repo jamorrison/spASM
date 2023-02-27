@@ -327,13 +327,13 @@ fn setup_output(fname: &Option<String>) -> bgzf::Writer {
     }
 }
 
-fn write_data(fh: &mut bgzf::Writer, data: &Vec<SnpCpgData>, k_int: &HashMap::<u32, String>, is_biscuit: bool, cutoff: f64, candidate: bool, no_ambiguous: bool) -> () {
+fn write_data(fh: &mut bgzf::Writer, data: Vec<SnpCpgData>, k_int: HashMap::<u32, String>, is_biscuit: bool, cutoff: f64, candidate: bool, no_ambiguous: bool) -> () {
     for p in data.iter() {
         // Format string as requested
         let tmp: String = if is_biscuit {
-            p.to_biscuit_asm(k_int)
+            p.to_biscuit_asm(&k_int)
         } else {
-            p.to_bedpe(k_int, cutoff)
+            p.to_bedpe(&k_int, cutoff)
         };
 
         let print_val: bool = if no_ambiguous {
@@ -384,11 +384,10 @@ fn main() {
 
     // Perform p-value false discovery rate correction
     let n = p_vals.len();
-    // TODO: I think I can do this p-correction in place, which would save on some memory
-    let p_corrected = stats::false_discovery_correction(&mut p_vals, &args.fdr, n);
+    stats::false_discovery_correction(&mut p_vals, &args.fdr, n);
 
     // Write data to output
     let mut writer = setup_output(&args.output);
 
-    write_data(&mut writer, &p_corrected, &k_int, args.biscuit, args.pcutoff, args.candidate, args.no_ambiguous);
+    write_data(&mut writer, p_vals, k_int, args.biscuit, args.pcutoff, args.candidate, args.no_ambiguous);
 }

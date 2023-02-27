@@ -20,15 +20,12 @@ pub fn unsort_sorted_indexes<T: PartialOrd>(p: &Vec<T>, reverse: bool) -> Vec<us
 }
 
 /// Sort vector of type generic that contains a float in it
-pub fn sort_with_floats<T: PartialOrd + Clone>(v: &Vec<T>, reverse: bool) -> Vec<T> {
-    let mut out = v.to_vec();
+pub fn sort_with_floats<T: PartialOrd + Clone>(v: &mut Vec<T>, reverse: bool) {
     if reverse {
-        out.sort_by(|a, b| b.partial_cmp(a).unwrap());
+        v.sort_by(|a, b| b.partial_cmp(a).unwrap())
     } else {
-        out.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap())
     }
-
-    out
 }
 
 /// Resorts a vector based on provided ranks

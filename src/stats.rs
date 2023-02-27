@@ -20,11 +20,7 @@ use crate::constants::{
     CpgType,
 };
 
-use crate::sorting::{
-    unsort_sorted_indexes,
-    sort_with_floats,
-    resort,
-};
+use crate::sorting;
 
 /// calculate Fisher's exact test
 /// Method from (fastFishersExactTest):
@@ -309,63 +305,47 @@ impl FromStr for FdrType {
 }
 
 /// Perform Bonferroni p-value adjustment
-fn bonferroni(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
-    let mut out: Vec<SnpCpgData> = Vec::new();
-    for v in p {
+fn bonferroni(p: &mut Vec<SnpCpgData>, n: usize) {
+    for v in p.iter_mut() {
         let tmp: f64 = if v.p*n as f64 > 1.0 {
             1.0 
         } else { 
             v.p * n as f64
         };
 
-        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: tmp, pdata: v.pdata } );
+        v.p = tmp;
     }
-
-    out
 }
 
 /// Perform BH p-value adjustment, sorting done in-function
-fn benjamini_hochberg(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
-    let mut out: Vec<SnpCpgData> = Vec::new();
-
+fn benjamini_hochberg(p: &mut Vec<SnpCpgData>, n: usize) {
     // Rank of p-values
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
 
-    // Indexes for returning to original order
-    let original_order = unsort_sorted_indexes(p, true);
-
     // Sort inputs in descending order
-    let sorted = sort_with_floats(p, true);
+    sorting::sort_with_floats(p, true);
 
     let mut curr_min = f64::MAX;
-    let mut tmp;
-    for (i, v) in sorted.iter().enumerate() {
-        tmp = (n as f64 / rank[i] as f64) * v.p;
+    for (i, v) in p.iter_mut().enumerate() {
+        let tmp = (n as f64 / rank[i] as f64) * v.p;
         if tmp < curr_min {
             curr_min = tmp;
         }
 
-        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        v.p = curr_min.min(1.0);
     }
-
-    resort(&out, &original_order)
 }
 
 /// Performs BY p-value adjustment, sorting done in-function
-fn benjamini_yekutieli(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
+fn benjamini_yekutieli(p: &mut Vec<SnpCpgData>, n: usize) {
     // Euler-Mascheroni constant
     const GAMMA: f64 = 0.577215664901532;
-
-    let mut out: Vec<SnpCpgData> = Vec::new();
 
     // Rank of p-values
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
 
-    // Indexes for returning to original order
-    let original_order = unsort_sorted_indexes(p, true);
-
     // Sort inputs in descending order
-    let sorted = sort_with_floats(p, true);
+    sorting::sort_with_floats(p, true);
 
     // Calculate harmonic number
     // Starting at 125, the percent difference between the approximation of the harmonic constant
@@ -379,76 +359,62 @@ fn benjamini_yekutieli(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
 
     let mut curr_min = f64::MAX;
     let mut tmp;
-    for (i, v) in sorted.iter().enumerate() {
+    for (i, v) in p.iter_mut().enumerate() {
         tmp = (cm * n as f64 / rank[i] as f64) * v.p;
         if tmp < curr_min {
             curr_min = tmp;
         }
 
-        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        v.p = curr_min.min(1.0);
     }
-
-    resort(&out, &original_order)
 }
 
 /// Perform Hochberg p-value adjustment, sorting done in-function
-fn hochberg(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
-    let mut out: Vec<SnpCpgData> = Vec::new();
-
+fn hochberg(p: &mut Vec<SnpCpgData>, n: usize) {
     // Rank of p-values
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
 
-    // Indexes for returning to original order
-    let original_order = unsort_sorted_indexes(p, true);
-
     // Sort inputs in descending order
-    let sorted = sort_with_floats(p, true);
+    sorting::sort_with_floats(p, true);
 
     let mut curr_min = f64::MAX;
     let mut tmp;
-    for (i, v) in sorted.iter().enumerate() {
+    for (i, v) in p.iter_mut().enumerate() {
         tmp = (n as f64 + 1.0 - rank[i] as f64) * v.p;
         if tmp < curr_min {
             curr_min = tmp;
         }
 
-        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_min.min(1.0), pdata: v.pdata } );
+        v.p = curr_min.min(1.0);
     }
-
-    resort(&out, &original_order)
 }
 
 /// Perform Holm p-value adjustment, sorting done in-function
-fn holm(p: &Vec<SnpCpgData>, n: usize) -> Vec<SnpCpgData> {
-    let mut out: Vec<SnpCpgData> = Vec::new();
-
+fn holm(p: &mut Vec<SnpCpgData>, n: usize) {
     // Rank of p-values
     let rank: Vec<usize> = (1..p.len()+1).collect();
 
-    // Indexes for returning to original order
-    let original_order = unsort_sorted_indexes(p, false);
-
     // Sort inputs in descending order
-    let sorted = sort_with_floats(p, false);
+    sorting::sort_with_floats(p, false);
 
     let mut curr_max = f64::MIN;
     let mut tmp;
-    for (i, v) in sorted.iter().enumerate() {
+    for (i, v) in p.iter_mut().enumerate() {
         tmp = (n as f64 + 1.0 - rank[i] as f64) * v.p;
         if tmp > curr_max {
             curr_max = tmp;
         }
 
-        out.push( SnpCpgData { chr: v.chr, snp_pos: v.snp_pos, cpg_pos: v.cpg_pos, p: curr_max.min(1.0), pdata: v.pdata } );
+        v.p = curr_max.min(1.0);
     }
-
-    resort(&out, &original_order)
 }
 
-pub fn false_discovery_correction(p: &Vec<SnpCpgData>, typ: &str, n: usize) -> Vec<SnpCpgData> {
+//pub fn false_discovery_correction(p: &mut Vec<SnpCpgData>, typ: &str, n: usize) -> Vec<SnpCpgData> {
+pub fn false_discovery_correction(p: &mut Vec<SnpCpgData>, typ: &str, n: usize) {
     // No need to correct things if nothing there or only one entry
     if p.len() <= 1 {
-        return p.to_vec();
+        //return p.to_vec();
+        return;
     }
 
     // Get FDR type
@@ -460,29 +426,27 @@ pub fn false_discovery_correction(p: &Vec<SnpCpgData>, typ: &str, n: usize) -> V
         },
     };
 
-    let out: Vec<SnpCpgData>;
     match t {
         FdrType::Bh => {
-            out = benjamini_hochberg(p, n);
+            benjamini_hochberg(p, n);
         },
         FdrType::Holm => {
-            out = holm(p, n);
+            holm(p, n);
         },
         FdrType::Hochberg => {
-            out = hochberg(p, n);
+            hochberg(p, n);
         },
         FdrType::Bonferroni => {
-            out = bonferroni(p, n);
+            bonferroni(p, n);
         },
         FdrType::By => {
-            out = benjamini_yekutieli(p, n);
+            benjamini_yekutieli(p, n);
         },
         FdrType::No => {
-            out = p.clone();
+            return;
+            //p.clone();
         },
-    };
-
-    out
+    }
 }
 
 #[cfg(test)]
