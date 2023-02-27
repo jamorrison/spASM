@@ -7,11 +7,7 @@ use std::{
 
 use thiserror::Error;
 
-use crate::utils::{
-    row_sums,
-    col_sums,
-    top_two,
-};
+use crate::utils;
 
 use crate::constants::{
     CLOSE_TO_ZERO,
@@ -19,8 +15,6 @@ use crate::constants::{
     Base,
     CpgType,
 };
-
-use crate::sorting;
 
 /// calculate Fisher's exact test
 /// Method from (fastFishersExactTest):
@@ -219,12 +213,12 @@ pub fn calculate_p_values(fm: &[u32], nrow: usize, ncol: usize) -> Option<(f64, 
     }
 
     // Find row and column sums
-    let rs: Vec<u32> = row_sums(fm, nrow, ncol);
-    let cs: Vec<u32> = col_sums(fm, nrow, ncol);
+    let rs: Vec<u32> = utils::row_sums(fm, nrow, ncol);
+    let cs: Vec<u32> = utils::col_sums(fm, nrow, ncol);
 
     // Find top two values in rows and columns
-    let (row_one, row_two) = top_two(&rs, nrow);
-    let (col_one, col_two) = top_two(&cs, ncol);
+    let (row_one, row_two) = utils::top_two(&rs, nrow);
+    let (col_one, col_two) = utils::top_two(&cs, ncol);
 
     if rs[row_one] > 0 && rs[row_two] > 0 && cs[col_one] > 0 && cs[col_two] > 0 {
         let p_value = fishers_exact(
@@ -323,7 +317,7 @@ fn benjamini_hochberg(p: &mut Vec<SnpCpgData>, n: usize) {
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
 
     // Sort inputs in descending order
-    sorting::sort_with_floats(p, true);
+    utils::sort_with_floats(p, true);
 
     let mut curr_min = f64::MAX;
     for (i, v) in p.iter_mut().enumerate() {
@@ -345,7 +339,7 @@ fn benjamini_yekutieli(p: &mut Vec<SnpCpgData>, n: usize) {
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
 
     // Sort inputs in descending order
-    sorting::sort_with_floats(p, true);
+    utils::sort_with_floats(p, true);
 
     // Calculate harmonic number
     // Starting at 125, the percent difference between the approximation of the harmonic constant
@@ -375,7 +369,7 @@ fn hochberg(p: &mut Vec<SnpCpgData>, n: usize) {
     let rank: Vec<usize> = (1..p.len()+1).rev().collect();
 
     // Sort inputs in descending order
-    sorting::sort_with_floats(p, true);
+    utils::sort_with_floats(p, true);
 
     let mut curr_min = f64::MAX;
     let mut tmp;
@@ -395,7 +389,7 @@ fn holm(p: &mut Vec<SnpCpgData>, n: usize) {
     let rank: Vec<usize> = (1..p.len()+1).collect();
 
     // Sort inputs in descending order
-    sorting::sort_with_floats(p, false);
+    utils::sort_with_floats(p, false);
 
     let mut curr_max = f64::MIN;
     let mut tmp;

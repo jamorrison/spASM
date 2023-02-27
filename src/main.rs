@@ -12,7 +12,6 @@ use rust_htslib::{
 };
 
 mod utils;
-mod sorting;
 mod collapse;
 mod constants;
 use crate::constants::{

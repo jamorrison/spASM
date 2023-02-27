@@ -111,6 +111,15 @@ pub fn top_two(v: &Vec<u32>, n: usize) -> (usize, usize) {
     (winner, first_loser)
 }
 
+/// Sort vector of type generic that contains a float in it
+pub fn sort_with_floats<T: PartialOrd + Clone>(v: &mut Vec<T>, reverse: bool) {
+    if reverse {
+        v.sort_by(|a, b| b.partial_cmp(a).unwrap())
+    } else {
+        v.sort_by(|a, b| a.partial_cmp(b).unwrap())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
