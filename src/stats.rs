@@ -19,7 +19,7 @@ use crate::constants::{
 /// calculate Fisher's exact test
 /// Method from (fastFishersExactTest):
 ///     https://genome.sph.umich.edu/w/images/b/b3/Bios615-fa12-lec03-presentation.pdf
-pub fn log_hypergeometric_dist(lf: &Vec<f64>, m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
+fn log_hypergeometric_dist(lf: &Vec<f64>, m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
     lf[(m11+m12) as usize] +
     lf[(m21+m22) as usize] +
     lf[(m11+m21) as usize] +
@@ -31,7 +31,7 @@ pub fn log_hypergeometric_dist(lf: &Vec<f64>, m11: i64, m12: i64, m21: i64, m22:
     lf[(m11+m12+m21+m22) as usize]
 }
 
-pub fn fishers_exact(m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
+fn fishers_exact(m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
     let n: i64 = m11 + m12 + m21 + m22;
 
     // Pre-store factorial values as ln(N!) to handle potentially large values
@@ -258,7 +258,7 @@ enum FdrType {
 
 /// FdrType errors
 #[derive(Error, Debug, PartialEq)]
-enum FdrTypeError {
+pub enum FdrTypeError {
     /// unknown type
     #[error("unknown FDR type. try spasm --help for options")]
     UnknownType,
@@ -295,6 +295,13 @@ impl FromStr for FdrType {
         };
 
         Ok(out)
+    }
+}
+
+pub fn validate_fdr_type(fdr: &str) -> Result<String, FdrTypeError> {
+    match FdrType::from_str(fdr.to_uppercase().as_str()) {
+        Ok(_) => Ok(String::from(fdr)),
+        Err(e) => Err(e),
     }
 }
 
@@ -403,16 +410,14 @@ fn holm(p: &mut Vec<SnpCpgData>, n: usize) {
     }
 }
 
-//pub fn false_discovery_correction(p: &mut Vec<SnpCpgData>, typ: &str, n: usize) -> Vec<SnpCpgData> {
-pub fn false_discovery_correction(p: &mut Vec<SnpCpgData>, typ: &str, n: usize) {
+pub fn false_discovery_correction(p: &mut Vec<SnpCpgData>, typ: &String, n: usize) {
     // No need to correct things if nothing there or only one entry
     if p.len() <= 1 {
-        //return p.to_vec();
         return;
     }
 
     // Get FDR type
-    let t = match FdrType::from_str(typ) {
+    let t = match FdrType::from_str(typ.to_uppercase().as_str()) {
         Ok(f) => f,
         Err(err) => {
             eprintln!("{}", err);
@@ -438,7 +443,6 @@ pub fn false_discovery_correction(p: &mut Vec<SnpCpgData>, typ: &str, n: usize) 
         },
         FdrType::No => {
             return;
-            //p.clone();
         },
     }
 }

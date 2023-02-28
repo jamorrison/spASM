@@ -59,7 +59,7 @@ struct Args {
     ///     Hochberg,
     ///     Holm,
     ///     No (do not apply false discovery correction)
-    #[clap(short = 'c', long, default_value_t = String::from("BH"))]
+    #[clap(short = 'c', long, default_value_t = String::from("BH"), value_parser = stats::validate_fdr_type)]
     fdr: String,
 
     /// p-value significance cutoff
