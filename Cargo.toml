@@ -16,4 +16,4 @@ quit = { version = "1.2.0" }
 thiserror = { version = "1" }
 
 [profile.release]
-debug = 1
+debug = 0
