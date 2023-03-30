@@ -25,9 +25,9 @@ pub fn chromosome_lookup_tables<P: AsRef<Path>>(path: P) -> (HashMap::<String, u
     let mut k_int: HashMap::<u32, String> = HashMap::new();
     let genome = open_ref(path);
 
-    let nseq = genome.fetch_n_seqs();
+    let nseq = genome.n_seqs();
     for i in 0..nseq {
-        let seq = genome.fetch_i_seq(i as i32).unwrap();
+        let seq = genome.seq_name(i as i32).unwrap();
         k_chr.insert(seq.clone(), i as u32);
         k_int.insert(i as u32, seq);
     }
