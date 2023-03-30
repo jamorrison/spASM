@@ -53,9 +53,9 @@ echo -e "\t../target/release/spasm --fdr Holm example.fa.gz test.epibed.gz"
 ../target/release/spasm --fdr Holm example.fa.gz test.epibed.gz
 echo -e "\t../target/release/spasm --fdr Hochberg example.fa.gz test.epibed.gz"
 ../target/release/spasm --fdr Hochberg example.fa.gz test.epibed.gz
-echo -e "\t../target/release/spasm --fdr None example.fa.gz test.epibed.gz"
-../target/release/spasm --fdr None example.fa.gz test.epibed.gz
+echo -e "\t../target/release/spasm --fdr No example.fa.gz test.epibed.gz"
+../target/release/spasm --fdr No example.fa.gz test.epibed.gz
 
 echo -e "Testing p-value cutoff change"
-echo -e "\t../target/release/spasm --pcutoff 0.4 --fdr None example.fa.gz test.epibed.gz"
-../target/release/spasm --pcutoff 0.4 --fdr None example.fa.gz test.epibed.gz
+echo -e "\t../target/release/spasm --pcutoff 0.4 --fdr No example.fa.gz test.epibed.gz"
+../target/release/spasm --pcutoff 0.4 --fdr No example.fa.gz test.epibed.gz
