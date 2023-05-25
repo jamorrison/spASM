@@ -9,58 +9,13 @@ use thiserror::Error;
 
 use crate::utils;
 
+use crate::fishers_exact_test;
 use crate::constants::{
     CLOSE_TO_ZERO,
     N_METH_STATES,
     Base,
     CpgType,
 };
-
-/// calculate Fisher's exact test
-/// Method from (fastFishersExactTest):
-///     https://genome.sph.umich.edu/w/images/b/b3/Bios615-fa12-lec03-presentation.pdf
-fn log_hypergeometric_dist(lf: &Vec<f64>, m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
-    lf[(m11+m12) as usize] +
-    lf[(m21+m22) as usize] +
-    lf[(m11+m21) as usize] +
-    lf[(m12+m22) as usize] -
-    lf[(m11) as usize] -
-    lf[(m12) as usize] -
-    lf[(m21) as usize] -
-    lf[(m22) as usize] -
-    lf[(m11+m12+m21+m22) as usize]
-}
-
-fn fishers_exact(m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
-    let n: i64 = m11 + m12 + m21 + m22;
-
-    // Pre-store factorial values as ln(N!) to handle potentially large values
-    let mut log_factorials: Vec<f64> = vec![0.0; (n+1) as usize];
-    for i in 1..n+1 {
-        log_factorials[i as usize] = log_factorials[(i-1) as usize] + (i as f64).ln();
-    }
-
-    let p_cutoff = log_hypergeometric_dist(&log_factorials, m11, m12, m21, m22);
-
-    let mut p: f64 = 0.0;
-    for i in 0..n+1 {
-        if m11+m12-i >= 0 && m11+m21-i >= 0 && m22-m11+i >= 0 {
-            let l = log_hypergeometric_dist(&log_factorials, i, m11+m12-i, m11+m21-i, m22-m11+i);
-            if l <= p_cutoff {
-                p += (l as f64 - p_cutoff).exp();
-            }
-        }
-    }
-
-    let log_p = p_cutoff + p.ln();
-
-    let mut p = log_p.exp();
-    if p > 1.0 {
-        p = 1.0;
-    }
-
-    p
-}
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy)]
 pub struct PValMetadata {
@@ -221,7 +176,7 @@ pub fn calculate_p_values(fm: &[u32], nrow: usize, ncol: usize) -> Option<(f64, 
     let (col_one, col_two) = utils::top_two(&cs, ncol);
 
     if rs[row_one] > 0 && rs[row_two] > 0 && cs[col_one] > 0 && cs[col_two] > 0 {
-        let p_value = fishers_exact(
+        let p_value = fishers_exact_test::fishers_exact_test(
             fm[N_METH_STATES*row_one+col_one] as i64,
             fm[N_METH_STATES*row_one+col_two] as i64,
             fm[N_METH_STATES*row_two+col_one] as i64,
@@ -444,27 +399,5 @@ pub fn false_discovery_correction(p: &mut Vec<SnpCpgData>, typ: &String, n: usiz
         FdrType::No => {
             return;
         },
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::constants;
-
-    fn float_equality(x: f64, y: f64) -> bool {
-        (x - y).abs() < constants::CLOSE_TO_ZERO
-    }
-
-    #[test]
-    fn test_fishers_exact_sig() {
-        let test = fishers_exact(15, 0, 0, 15);
-        assert!(float_equality(test, 1.289e-8));
-    }
-
-    #[test]
-    fn test_fishers_exact_not_sig() {
-        let test = fishers_exact(15, 0, 15, 0);
-        assert!(float_equality(test, 1.0));
     }
 }

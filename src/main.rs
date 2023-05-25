@@ -20,6 +20,7 @@ use crate::constants::{
 };
 mod ref_genome;
 mod snp;
+mod fishers_exact_test;
 
 mod records;
 use crate::records::Record;
@@ -351,6 +352,7 @@ fn write_data(fh: &mut bgzf::Writer, data: Vec<SnpCpgData>, k_int: HashMap::<u32
     }
 }
 
+#[quit::main]
 fn main() {
     // Command line arguments
     // TODO: Add an option to read a BED file of desired locations
