@@ -45,10 +45,7 @@ struct Args {
     #[clap(short = 'g', long, default_value_t = String::from("all"))]
     region: String,
 
-    /// read mates come from the same original DNA fragment, therefore they represent the same
-    /// "epi-haplotype". To recover this correlation, mate reads are merged into a single fragment.
-    /// However, there may be cases where mate reads need to be treated individually. This option
-    /// provides the ability to avoid merging mate reads.
+    /// do not merge mate reads together into a single DNA fragment
     #[clap(short, long, action)]
     no_mate_merging: bool,
 
