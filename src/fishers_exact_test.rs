@@ -133,7 +133,7 @@ fn gammafn(x: f64) -> Result<f64, FishersExactError> {
     const XSML: f64 = 1.01005016708_f64 * f64::MIN; // 0.01_f64.exp() * f64::MIN
     
     // Check for problem inputs
-    if x < CLOSE_TO_ZERO || (x < 0.0 && (x - x.round()).abs() < CLOSE_TO_ZERO) {
+    if x.abs() < CLOSE_TO_ZERO || (x < 0.0 && (x - x.round()).abs() < CLOSE_TO_ZERO) {
         return Err(FishersExactError::NaNReturn);
     }
 
@@ -150,7 +150,7 @@ fn gammafn(x: f64) -> Result<f64, FishersExactError> {
         y = x - n as f64;
         n -= 1;
 
-        let mut value = match chebyshev_eval(2.0*y - 1.0, &GAMCS, NGAM) {
+        let value = match chebyshev_eval(2.0*y - 1.0, &GAMCS, NGAM) {
             Ok(f) => f + 0.9375,
             Err(err) => return Err(err),
         };
@@ -165,19 +165,10 @@ fn gammafn(x: f64) -> Result<f64, FishersExactError> {
                 return Err(FishersExactError::InfiniteGamma);
             }
 
-            n = -n;
-            for i in 0..n {
-                value /= x + i as f64;
-            }
-
-            return Ok(value);
+            return Ok( (0..-n).fold(value, |acc, e| acc / (x+e as f64)) );
         } else {
             // gamma(x) for 2 <= x <= 10
-            for i in 1..n+1 {
-                value *= y + i as f64;
-            }
-
-            return Ok(value);
+            return Ok( (1..n+1).fold(value, |acc, e| acc * (y+e as f64)) );
         }
     } else {
         // gamma(x) for |x| > 10
@@ -188,11 +179,8 @@ fn gammafn(x: f64) -> Result<f64, FishersExactError> {
             return Ok(0.0);
         }
 
-        let mut value = 1.0;
-        if y <= 50.0 && (y - y.trunc()).abs() < CLOSE_TO_ZERO {
-            for i in 2..y as i64 {
-                value *= i as f64;
-            }
+        let value = if y <= 50.0 && (y - y.trunc()).abs() < CLOSE_TO_ZERO {
+            (2..y as i64).fold(1.0, |acc, e| acc * e as f64)
         } else {
             let tmp = if (2.0*y - (2.0*y).trunc()).abs() < CLOSE_TO_ZERO {
                 match stirling_error(y) {
@@ -205,8 +193,9 @@ fn gammafn(x: f64) -> Result<f64, FishersExactError> {
                     Err(err) => { return Err(err); }
                 }
             };
-            value = ((y-0.5) * y.ln() - y + std::f64::consts::TAU.sqrt().ln() + tmp).exp();
-        }
+
+            ((y-0.5) * y.ln() - y + std::f64::consts::TAU.sqrt().ln() + tmp).exp()
+        };
 
         if x > 0.0 {
             return Ok(value);
@@ -573,13 +562,8 @@ pub fn fishers_exact_test(m11: i64, m12: i64, m21: i64, m22: i64) -> f64 {
     }
 
     // Calculate p-value
-    let mut pval: f64 = 0.0;
     let comp: f64 = log_hypergeo[(m11 - lo) as usize];
-    for v in log_hypergeo {
-        if v <= 1.0000001*comp {
-            pval += v;
-        }
-    }
+    let pval = log_hypergeo.iter().filter(|&x| *x <= 1.0000001*comp).fold(0.0, |acc, e| acc + e);
 
     if pval > 1.0 {
         1.0
@@ -646,6 +630,18 @@ mod tests{
     }
 
     #[test]
+    fn test_gammafn_neg() {
+        let test = gammafn(-1.5).unwrap();
+        assert!(float_equality(test, 2.3632718012073548053));
+    }
+
+    #[test]
+    fn test_gammafn_eleven() {
+        let test = gammafn(11.0).unwrap();
+        assert!(float_equality(test, 3628800.0));
+    }
+
+    #[test]
     fn test_lgammafn_zero() {
         let test = lgammafn(0.0);
         assert_eq!(test, Err(FishersExactError::InfiniteGamma));
@@ -659,8 +655,8 @@ mod tests{
 
     #[test]
     fn test_lgammafn_minus_half() {
-        let test = lgammafn(-0.5);
-        assert_eq!(test, Err(FishersExactError::NaNReturn));
+        let test = lgammafn(-0.5).unwrap();
+        assert!(float_equality(test, 1.2655121234846453682));
     }
 
     #[test]
