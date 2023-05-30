@@ -287,7 +287,7 @@ fn create_snp_cpg_pairs(fr: HashMap::<String, Vec<Record>>, redist: HashMap::<St
     out
 }
 
-fn find_p_values(locs: HashMap<(u32, u32, u32), [u32; constants::LENGTH]>) -> Vec<SnpCpgData> {
+fn find_p_values(locs: HashMap<(u32, u32, u32), [u32; constants::LENGTH]>, fdr: &String) -> Vec<SnpCpgData> {
     let mut out: Vec<SnpCpgData> = Vec::new();
 
     for (k, v) in locs {
@@ -305,6 +305,10 @@ fn find_p_values(locs: HashMap<(u32, u32, u32), [u32; constants::LENGTH]>) -> Ve
             );
         }
     }
+
+    // Perform p-value false discovery rate correction
+    let n = out.len();
+    stats::false_discovery_correction(&mut out, fdr, n);
 
     out
 }
@@ -377,12 +381,8 @@ fn main() {
     // we want it to
     let locations = create_snp_cpg_pairs(file_records, redist, &(!args.no_mate_merging), &r_chr_id, &r_start, &r_end, &args.verbose);
 
-    // Find p-values from inputs
-    let mut p_vals = find_p_values(locations);
-
-    // Perform p-value false discovery rate correction
-    let n = p_vals.len();
-    stats::false_discovery_correction(&mut p_vals, &args.fdr, n);
+    // Find p-values and perform p-value false discovery rate correction from inputs
+    let p_vals = find_p_values(locations, &args.fdr);
 
     // Write data to output
     let mut writer = setup_output(&args.output);
