@@ -96,7 +96,6 @@ fn process_file(fname: &PathBuf, genome: &PathBuf, k_chr: &HashMap::<String, u32
             eprintln!("NOTE: You requested that all reads be read. This may take a long time for large epiBEDs");
         }
 
-        // TODO: Count number of reads and print the number under DEBUG verbose
         let file = match bgzf::Reader::from_path(fname) {
             Ok(f) => f,
             Err(_) => {
