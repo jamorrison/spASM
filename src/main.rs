@@ -374,11 +374,21 @@ fn main() {
         },
     };
 
+    if file_records.is_empty() {
+        eprintln!("No records to process from epiBED file");
+        quit::with_code(0);
+    }
+
     // Pull out matched SNP-CpG pairs from reads/fragments
     // default is to merge mates, so when --no-mate-merging is given, the value is set to true
     // therefore, we want to take the opposite of what no_mate_merging to get the code to do what
     // we want it to
     let locations = create_snp_cpg_pairs(file_records, redist, &(!args.no_mate_merging), &r_chr_id, &r_start, &r_end, &args.verbose);
+
+    if locations.is_empty() {
+        eprintln!("No CpG-SNP pairs to process from epiBED file");
+        quit::with_code(0);
+    }
 
     // Find p-values and perform p-value false discovery rate correction from inputs
     let p_vals = find_p_values(locations, &args.fdr);
